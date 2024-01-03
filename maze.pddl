@@ -17,6 +17,7 @@
     (inc ?a ?b - position)
     (dec ?a ?b - position)
     (at ?x ?y - position)
+    (path ?x ?y - position)
     (facing ?d - direction)
     (is-north ?d - direction)
     (is-east ?d - direction)
@@ -30,6 +31,7 @@
     :parameters (?x ?y ?xn ?yn - position ?d - direction)
     :precondition (and 
       (at ?x ?y)
+      (path ?xn ?yn)
       (facing ?d)
       (or
         (and (is-north ?d) (inc ?y ?yn) (at ?xn ?y))
@@ -52,6 +54,7 @@
     )
     :effect (and 
       (facing ?dn)
+      (not (facing ?d))
     )
   )
 
@@ -63,6 +66,7 @@
     )
     :effect (and
       (facing ?dn)
+      (not (facing ?d))
     )
   )
 )
