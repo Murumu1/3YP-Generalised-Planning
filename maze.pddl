@@ -34,8 +34,8 @@
       (path ?xn ?yn)
       (facing ?d)
       (or
-        (and (is-north ?d) (inc ?y ?yn) (at ?xn ?y))
-        (and (is-south ?d) (dec ?y ?yn) (at ?xn ?y))
+        (and (is-north ?d) (dec ?y ?yn) (at ?xn ?y))
+        (and (is-south ?d) (inc ?y ?yn) (at ?xn ?y))
         (and (is-east ?d) (inc ?x ?xn) (at ?x ?yn))
         (and (is-west ?d) (dec ?x ?xn) (at ?x ?yn))
       )

@@ -37,46 +37,47 @@ class MazeProblemGenerator:
 
     def _main_loop(self) -> None:
 
-        for event in pygame.event.get():
+        while True:
 
-            if event.type == pygame.QUIT:
-                return
+            for event in pygame.event.get():
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.type == pygame.QUIT:
+                    return
 
-                current_tile = self._get_tile_position(pygame.mouse.get_pos())
-                current_tile_rect = self._get_tile_rect(current_tile)
+                if event.type == pygame.MOUSEBUTTONDOWN:
 
-                if pygame.mouse.get_pressed()[0]:
-                    if current_tile not in self._maze:
-                        self._maze.append(current_tile)
-                        pygame.draw.rect(self._screen, self.FILLED_TILE, current_tile_rect)
-                    else:
-                        self._maze.remove(current_tile)
-                        if current_tile == self._start:
-                            self._start = None
-                        if current_tile == self._goal:
-                            self._goal = None
-                        pygame.draw.rect(self._screen, self.BACKGROUND, current_tile_rect)
+                    current_tile = self._get_tile_position(pygame.mouse.get_pos())
+                    current_tile_rect = self._get_tile_rect(current_tile)
 
-                if pygame.mouse.get_pressed()[2]:
-                    if current_tile in self._maze:
+                    if pygame.mouse.get_pressed()[0]:
+                        if current_tile not in self._maze:
+                            self._maze.append(current_tile)
+                            pygame.draw.rect(self._screen, self.FILLED_TILE, current_tile_rect)
+                        else:
+                            self._maze.remove(current_tile)
+                            if current_tile == self._start:
+                                self._start = None
+                            if current_tile == self._goal:
+                                self._goal = None
+                            pygame.draw.rect(self._screen, self.BACKGROUND, current_tile_rect)
 
-                        if self._to_change == 'start':
-                            self._start, self._goal = self._change_special_tile(
-                                self._start, self._goal, current_tile, current_tile_rect, self.START_TILE
-                            )
-                            self._to_change = 'goal'
+                    if pygame.mouse.get_pressed()[2]:
+                        if current_tile in self._maze:
 
-                        elif self._to_change == 'goal':
-                            self._start, self._goal = self._change_special_tile(
-                                self._goal, self._start, current_tile, current_tile_rect, self.GOAL_TILE
-                            )
-                            self._to_change = 'start'
+                            if self._to_change == 'start':
+                                self._start, self._goal = self._change_special_tile(
+                                    self._start, self._goal, current_tile, current_tile_rect, self.START_TILE
+                                )
+                                self._to_change = 'goal'
 
-        pygame.display.flip()
-        self._clock.tick(60)
-        self._main_loop()
+                            elif self._to_change == 'goal':
+                                self._goal, self._start = self._change_special_tile(
+                                    self._goal, self._start, current_tile, current_tile_rect, self.GOAL_TILE
+                                )
+                                self._to_change = 'start'
+
+            pygame.display.flip()
+            self._clock.tick(60)
 
     def _change_special_tile(self, special_tile: tuple, conflict_tile: tuple, new_tile: tuple, new_tile_rect: pygame.Rect, colour: tuple) -> tuple:
         if special_tile:
