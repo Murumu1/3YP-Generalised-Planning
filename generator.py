@@ -1,197 +1,217 @@
 import pygame
-from glob import glob
 from unified_planning.io import PDDLReader, PDDLWriter
 from unified_planning.shortcuts import Object, Problem
+from constants import *
+from tile import Tile
 
 
 class MazeProblemGenerator:
 
     def __init__(self, domain_file_path: str):
 
-        # Colours
-        self.BACKGROUND = (255, 255, 255)
-        self.FILLED_TILE = (255, 255, 0)
-        self.GOAL_TILE = (0, 255, 0)
-        self.START_TILE = (255, 0, 0)
-
-        # Constants
-        self.SCREEN_SIZE = self.WIDTH, self.HEIGHT = 500, 500
-        self.TILE_COUNT = 10
-        self.TILE_SIZE = self.TILE_WIDTH, self.TILE_HEIGHT = (
-            self.WIDTH // self.TILE_COUNT,
-            self.HEIGHT // self.TILE_COUNT
-        )
-
         self.domain_file_path = domain_file_path
         self._problem = None
-        self._reset_tiles()
 
-        self._screen = None
-        self._clock = None
+    @staticmethod
+    def _change_special_tile(screen: pygame.Surface, special_tile: Tile, conflict_tile: Tile, new_tile: Tile,
+                             colour: tuple) -> tuple:
+        """
+        Logic for setting the special tiles.
+        Special tile is either start/goal and conflict tile is either goal/start respectively.
+        """
 
-    def _reset_tiles(self) -> None:
-        self._maze = []
-        self._goal = None
-        self._start = None
-        self._to_change = 'start'
+        # If the special tile is already on the maze
+        if special_tile is not None:
+            old_special_tile = special_tile.get_rect()
+            pygame.draw.rect(screen, FILLED_TILE, old_special_tile)
+            special_tile.set_position(tile=new_tile)
+        else:
+            special_tile = new_tile
 
-    def _main_loop(self) -> None:
+        # If the new tile is the same as the conflict tile, override
+        if conflict_tile is not None:
+            if new_tile == conflict_tile:
+                conflict_tile = None
 
-        while True:
+        # Draw the new tile
+        pygame.draw.rect(screen, colour, new_tile.get_rect())
+        return special_tile, conflict_tile
+
+    def generate_problem(self, problem_name: str) -> Problem:
+        """
+        Generates a problem in UP, by providing an interface for creating a maze.
+
+        * To create a maze, left-click on any part of the screen to mark it as a path, and left-click again to remove it.
+        * Right-click a tile on the maze to set it as a start or goal.
+        * Exit the program to generate the problem.
+
+        :param problem_name: Name of the problem to generate.
+        """
+
+        # Display set-up
+        pygame.init()
+        screen = pygame.display.set_mode(SCREEN_SIZE)
+        clock = pygame.time.Clock()
+        screen.fill(BACKGROUND)
+        maze_generated = False
+
+        # Maze set-up
+        maze = []
+        goal = None
+        start = None
+        to_change = START
+
+        while not maze_generated:
 
             for event in pygame.event.get():
 
+                # Exit when pygame window has been closed
                 if event.type == pygame.QUIT:
-                    return
+                    maze_generated = True
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
 
-                    current_tile = self._get_tile_position(pygame.mouse.get_pos())
-                    current_tile_rect = self._get_tile_rect(current_tile)
+                    # Obtain tile at mouse position after click
+                    current_tile = Tile(pygame_position=pygame.mouse.get_pos())
 
+                    # Left-click event
                     if pygame.mouse.get_pressed()[0]:
-                        if current_tile not in self._maze:
-                            self._maze.append(current_tile)
-                            pygame.draw.rect(self._screen, self.FILLED_TILE, current_tile_rect)
+
+                        # Add tile to maze if tile not in maze
+                        if current_tile not in maze:
+                            maze.append(current_tile)
+                            pygame.draw.rect(screen, FILLED_TILE, current_tile.get_rect())
+
+                        # Remove it otherwise
                         else:
-                            self._maze.remove(current_tile)
-                            if current_tile == self._start:
-                                self._start = None
-                            if current_tile == self._goal:
-                                self._goal = None
-                            pygame.draw.rect(self._screen, self.BACKGROUND, current_tile_rect)
+                            maze.remove(current_tile)
+                            if start is not None:
+                                if current_tile == start:
+                                    start = None
+                            if goal is not None:
+                                if current_tile == goal:
+                                    goal = None
+                            pygame.draw.rect(screen, BACKGROUND, current_tile.get_rect())
 
+                    # Right-click event
                     if pygame.mouse.get_pressed()[2]:
-                        if current_tile in self._maze:
-
-                            if self._to_change == 'start':
-                                self._start, self._goal = self._change_special_tile(
-                                    self._start, self._goal, current_tile, current_tile_rect, self.START_TILE
+                        if current_tile in maze:
+                            if to_change == START:
+                                start, goal = self._change_special_tile(
+                                    screen, start, goal, current_tile, START_TILE
                                 )
-                                self._to_change = 'goal'
-
-                            elif self._to_change == 'goal':
-                                self._goal, self._start = self._change_special_tile(
-                                    self._goal, self._start, current_tile, current_tile_rect, self.GOAL_TILE
+                                to_change = GOAL
+                            elif to_change == GOAL:
+                                goal, start = self._change_special_tile(
+                                    screen, goal, start, current_tile, GOAL_TILE
                                 )
-                                self._to_change = 'start'
+                                to_change = START
 
             pygame.display.flip()
-            self._clock.tick(60)
+            clock.tick(60)
 
-    def _change_special_tile(self, special_tile: tuple, conflict_tile: tuple, new_tile: tuple, new_tile_rect: pygame.Rect, colour: tuple) -> tuple:
-        if special_tile:
-            old_special_tile = self._get_tile_rect(special_tile)
-            pygame.draw.rect(self._screen, self.FILLED_TILE, old_special_tile)
-        special_tile = new_tile
-        if new_tile == conflict_tile:
-            conflict_tile = None
-        pygame.draw.rect(self._screen, colour, new_tile_rect)
-        return (
-            special_tile,
-            conflict_tile
-        )
+        # Ensure start and goal has been set
+        if start is None or goal is None:
+            raise Exception("You must set a start [red] and a goal [green] by left clicking tiles.")
 
-    def _get_tile_position(self, position: tuple) -> tuple:
-        return (
-            position[0] // self.TILE_WIDTH,
-            position[1] // self.TILE_HEIGHT
-        )
-
-    def _get_tile_rect(self, tile_position: tuple) -> pygame.Rect:
-        return pygame.Rect(
-            tile_position[0] * self.TILE_WIDTH,
-            tile_position[1] * self.TILE_HEIGHT,
-            self.TILE_WIDTH,
-            self.TILE_HEIGHT
-        )
-
-    def generate_problem(self, problem_name: str) -> Problem:
-
-        self._reset_tiles()
-
-        pygame.init()
-        self._screen = pygame.display.set_mode(self.SCREEN_SIZE)
-        self._clock = pygame.time.Clock()
-        self._screen.fill(self.BACKGROUND)
-        self._main_loop()
-
+        # Problem set-up
         reader = PDDLReader()
         self._problem = reader.parse_problem(self.domain_file_path)
         self._problem.name = problem_name
 
-        directions = ["north", "east", "south", "west"]
-        x_objects = [Object(f"x{i}", self._problem.user_type("position")) for i in range(self.TILE_COUNT)]
-        y_objects = [Object(f"y{i}", self._problem.user_type("position")) for i in range(self.TILE_COUNT)]
-        direction_objects = [Object(direction, self._problem.user_type("direction")) for direction in directions]
+        # Create objects
+        x_objects = [Object(f"x{i}", self._problem.user_type(POSITION)) for i in range(TILE_COUNT)]
+        y_objects = [Object(f"y{i}", self._problem.user_type(POSITION)) for i in range(TILE_COUNT)]
+        direction_objects = [Object(direction, self._problem.user_type("direction")) for direction in DIRECTIONS]
         self._problem.add_objects(x_objects + y_objects + direction_objects)
 
-        for i in range(1, self.TILE_COUNT):
+        # Set initial value for fluents
+        # inc(?a ?b) from x0->x9, y0->y9 := true
+        for i in range(1, TILE_COUNT):
             self._problem.set_initial_value(
-                self._problem.fluent("inc")(x_objects[i - 1], x_objects[i]),
+                self._problem.fluent(INC)(x_objects[i - 1], x_objects[i]),
                 True
             )
             self._problem.set_initial_value(
-                self._problem.fluent("inc")(y_objects[i - 1], y_objects[i]),
-                True
-            )
-
-        for i in range(1, self.TILE_COUNT):
-            self._problem.set_initial_value(
-                self._problem.fluent("dec")(x_objects[i], x_objects[i - 1]),
-                True
-            )
-            self._problem.set_initial_value(
-                self._problem.fluent("dec")(y_objects[i], y_objects[i - 1]),
+                self._problem.fluent(INC)(y_objects[i - 1], y_objects[i]),
                 True
             )
 
-        for tile in self._maze:
+        # dec(?a ?b) from x9->x0 y9->y0 := true
+        for i in range(1, TILE_COUNT):
             self._problem.set_initial_value(
-                self._problem.fluent("path")(x_objects[tile[0]], y_objects[tile[1]]),
+                self._problem.fluent(DEC)(x_objects[i], x_objects[i - 1]),
+                True
+            )
+            self._problem.set_initial_value(
+                self._problem.fluent(DEC)(y_objects[i], y_objects[i - 1]),
                 True
             )
 
-        for i in range(len(directions)):
+        # path(?x ?y) for all tiles in maze := true
+        for tile in maze:
+            x, y = tile.get_position()
             self._problem.set_initial_value(
-                self._problem.fluent(f"is-{directions[i]}")(direction_objects[i]),
+                self._problem.fluent(PATH)(x_objects[x], y_objects[y]),
                 True
             )
 
-        for i in range(len(directions)):
+        # is-{d}(?d) for all directions := true
+        for i in range(len(DIRECTIONS)):
             self._problem.set_initial_value(
-                self._problem.fluent("right-rot")(
+                self._problem.fluent(DIRECTION_CONDITIONS[i])(direction_objects[i]),
+                True
+            )
+
+        # right-rot(?d ?dn) for all directions, where dn is the direction to the right := true
+        for i in range(len(DIRECTIONS)):
+            self._problem.set_initial_value(
+                self._problem.fluent(RIGHT_ROT)(
                     direction_objects[i],
-                    direction_objects[i + 1 if i + 1 < len(directions) else 0]
+                    direction_objects[i + 1 if i + 1 < len(DIRECTIONS) else 0]
                 ),
                 True
             )
 
-        for i in range(len(directions)):
+        # left-rot(?d ?dn) for all directions, where dn is the direction to the left := true
+        for i in range(len(DIRECTIONS)):
             self._problem.set_initial_value(
-                self._problem.fluent("left-rot")(
+                self._problem.fluent(LEFT_ROT)(
                     direction_objects[i],
-                    direction_objects[i - 1 if i - 1 >= 0 else len(directions) - 1]
+                    direction_objects[i - 1 if i - 1 >= 0 else len(DIRECTIONS) - 1]
                 ),
                 True
             )
 
+        # facing(?d) ?d = north := true
         self._problem.set_initial_value(
-            self._problem.fluent("facing")(direction_objects[0]),
+            self._problem.fluent(FACING)(direction_objects[0]),
             True
         )
 
+        # Start position
+        s_x, s_y = start.get_position()
+
+        # at(?x ?y) ?x = s_x, ?y = s_y := true
         self._problem.set_initial_value(
-            self._problem.fluent("at")(x_objects[self._start[0]], y_objects[self._start[1]]),
+            self._problem.fluent(AT)(x_objects[s_x], y_objects[s_y]),
             True
         )
 
+        # Goal position
+        g_x, g_y = goal.get_position()
+
+        # Goal state: at(g_x g_y)
         self._problem.add_goal(
-            self._problem.fluent("at")(x_objects[self._goal[0]], y_objects[self._goal[1]])
+            self._problem.fluent(AT)(x_objects[g_x], y_objects[g_y])
         )
 
         return self._problem
 
     def export(self, directory: str) -> None:
+        """
+        Exports the problem saved in current object to a PDDL file.
+        :param directory: The directory of the PDDL file.
+        """
         writer = PDDLWriter(self._problem)
         writer.write_problem(f"{directory}/{self._problem.name}.pddl")
