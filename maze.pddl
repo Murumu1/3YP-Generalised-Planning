@@ -5,7 +5,6 @@
     :typing 
     :negative-preconditions 
     :conditional-effects
-    :disjunctive-preconditions
   )
 
   (:types 
@@ -27,17 +26,70 @@
     (right-rot ?d ?dn - direction)
   )
   
-  (:action move-forward
+  (:action move-up
     :parameters (?x ?y ?xn ?yn - position ?d - direction)
     :precondition (and 
       (at ?x ?y)
       (path ?xn ?yn)
       (facing ?d)
-      (or
-        (and (is-north ?d) (dec ?y ?yn) (at ?xn ?y))
-        (and (is-south ?d) (inc ?y ?yn) (at ?xn ?y))
-        (and (is-east ?d) (inc ?x ?xn) (at ?x ?yn))
-        (and (is-west ?d) (dec ?x ?xn) (at ?x ?yn))
+      (and 
+        (is-north ?d) 
+        (dec ?y ?yn) 
+        (at ?xn ?y)
+      )
+    )
+    :effect (and
+      (at ?xn ?yn)
+      (not (at ?x ?y))
+    )
+  )
+
+  (:action move-down
+    :parameters (?x ?y ?xn ?yn - position ?d - direction)
+    :precondition (and 
+      (at ?x ?y)
+      (path ?xn ?yn)
+      (facing ?d)
+      (and 
+        (is-south ?d) 
+        (inc ?y ?yn) 
+        (at ?xn ?y)
+      )
+    )
+    :effect (and
+      (at ?xn ?yn)
+      (not (at ?x ?y))
+    )
+  )
+
+  (:action move-right
+    :parameters (?x ?y ?xn ?yn - position ?d - direction)
+    :precondition (and 
+      (at ?x ?y)
+      (path ?xn ?yn)
+      (facing ?d)
+      (and 
+        (is-east ?d) 
+        (inc ?x ?xn) 
+        (at ?x ?yn)
+      )
+    )
+    :effect (and
+      (at ?xn ?yn)
+      (not (at ?x ?y))
+    )
+  )
+
+  (:action move-left
+    :parameters (?x ?y ?xn ?yn - position ?d - direction)
+    :precondition (and 
+      (at ?x ?y)
+      (path ?xn ?yn)
+      (facing ?d)
+      (and 
+        (is-west ?d) 
+        (dec ?x ?xn) 
+        (at ?x ?yn)
       )
     )
     :effect (and
