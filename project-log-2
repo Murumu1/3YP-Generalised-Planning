@@ -1,3 +1,281 @@
+THE DAILY GRIND FOR PROJECT.
+AIM FOR TEN POMODOROS A DAY (F: 5H 20M/W: 4H 10M).
+DAY FINISHES AT 12:00AM
+
+PROJECT LOG
+
+30TH DECEMBER
+-------------
+
+09:27PM START POMODORO #1:
+- Started looking at C++
+- Looked at Fast Downward and decided that I want to move straight to generalised planning
+- Read https://www.cambridge.org/core/services/aop-cambridge-core/content/view/61056E7879134E057677CE0CEDD1339E/S0269888918000231a.pdf/a-review-of-generalized-planning.pdf - contains good mathematical explanations on generalised planning but doesn't help just yet
+- Read a bit of http://serjice.webs.upv.es/publications/damir-ijcai16/damir-ijcai16.pdf - not certain how useful it is, come back to this
+- Found a potential framwork for best first generalised planning - https://github.com/jsego/bfgp-pp as well as https://github.com/rleap-project/best-first-generalized-planning
+
+09:58PM POMODORO #2:
+- Good article - https://www.ijcai.org/proceedings/2019/0898.pdf - start to consider heuristics for the domain-dependant problem of mazes
+- Thinking about runtimes for creating a generalised plan for mazes
+- Looked more into BFGP - unsure of how to utilise it, need to research more on this?
+- Deconstructors in C++, when an object is deleted -> do something, denoted with "~" before class name
+
+10:29PM POMODORO #3:
+- The basic variables of a planning problem are called fluents, and are quantities that can change over time. They can have parameters effectively describing multiple variables. E.g: fluent "connected" with 2 params a, b: there exists an edge between a, b if connected(a, b) = T.
+- Looked at https://github.com/aiplan4eu/up-bfgp - at bfgp.py
+- Going back to python as it seems to be the most useful
+- Next pomodoro will start trying to implement up-bfgp
+
+10:59PM POMODORO #4:
+- Synthesis in GP is converting a program/problem into some executable plan (i.e this plan solves problems accepted by it) - i think
+- Looked fully into bfgp.py - understading mostly how it works, need to grab PDDL files now or write them in Python (probs the former).
+- Useful article to look at: https://proceedings.kr.org/2020/16/kr2020-0016-bonet-et-al.pdf - maybe look into LTL synthesis?
+
+11:41PM POMODORO #5:
+- Attempted to get bfgp from GitHub - failed miserably, libs all in the wrong place, nothing is being recognised will need to reevaluate and maybe restart git project.
+- Trying to find a way to hard reset back to where I started (not going swimmingly)
+
+12:09AM END
+
+
+NEW YEARS EVE
+-------------
+
+11:21AM POMODORO #1:
+- PyCharm is having a seizure... - trying to get everything back on track.
+- Reverted back to first commit - broke the whole thing even more.
+- May have figured out how to solve the issue, going to start on it next pomodoro.
+
+11:52AM POMODORO #2:
+- Finally managed to get the thing working, was able to download the package from Disk.
+- Now lets just pray it works...
+- Next pomodoro, I will try and generate a plan!!!!
+
+12:23PM POMODORO #3:
+- Managed to get gripper problem working on it!!
+- I think the reason why the maze doesn't work might be linked to negative preconditions.
+- Might have to write up some code to try and get it working.
+
+04:49PM POMODORO #4:
+- For blockly game, preconditions will be the blocks avaiable to play with
+- Working on reading negative preconditions
+- Modified maze.pddl - still not working variables unbounded: {position - object yn}
+- Going to create this from scratch in next pomodoros
+
+05:25PM POMODORO #5:
+- Assuming each problem i has a solution in a maximum of ki in K steps, can we write a generalised plan that can solve all problems with respect to K
+- How can we model a Blockly problem with actions such as for, if etc. as PDDL actions?
+- Can we extend this to make it such that each problem can only use n actions out of |A| possible actions?
+- Actions:
+	- move-forward
+	- turn-left
+	- turn-right
+	- repeat-until-goal
+	- if-path-ahead
+	- if-path-left
+	- if-path-right
+	- if-path-ahead-else
+	- if-path-left-else
+	- if-path-right-else
+
+
+06:00PM EARLY END DUE TO OUTING
+
+
+NEW YEARS DAY
+-------------
+
+05:40PM POMODORO #1:
+- Useful definitions for PDDL - https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=917050
+- Sent an email to Ramon about the the idea behind where this is going
+
+09:45PM POMODORO #2:
+- Distracted mostly
+- Looked at how to write a domain and problem in Python using the Unified Planning module
+- Next pomodoro, hopefully will have started writing up the domain for the Maze problem
+
+10:16PM POMODORO #3:
+- Started writing up the domain
+- Need to figure out how to write a forall effect within the effect
+- Also need to logically think about the direction and how that affects everything
+
+10:48PM POMODORO #4:
+- Figured out how to do the Forall, now need to think about the AND and other stuff
+- Thinking about how to make it so that move-forward works in the direction requested
+
+11:23PM POMODORO #5:
+- "when" keyword is basically the if statement
+- Decided to write up the whole thing in PDDL first to check if its working at least
+- Implement something like (when (= ?d north) (at ?agent ?x ?yn)) ...
+
+11:53PM END
+
+
+2ND JANUARY
+-----------
+
+12:11PM POMODORO #1:
+- Written the move-forward action hoping it works, it's currently just a lot of "when" conditions with forall conditions inside them. CROSSING FINGERS!
+- Next pomodoro will hopefully finish domain.
+
+12:56PM POMODORO #2:
+- Finished writing domain, need to make some minor changes to problem file then hopefully it's testable!!
+- Maze inspo from: https://github.com/SoarGroup/Domains-Planning-Domain-Definition-Language/blob/master/pddl/maze.pddl
+- Need to understand the equality thing - how can I make it so it recognises NESW?
+- If this works then I can cache a lot of the conditional statements and make it fast to run in Python rather than having to parse everything into UP.
+
+01:33PM POMODORO #3:
+- Written up the problem file, now all there is to do is to test it! If it works, ill start working on trying to make this in Python.
+- Made preconditions that enable the planner to check whether a direction is a specific direction
+- Cross fingers after this break is over, the planner finds a plan (it should)
+
+02:03PM POMODORO #4:
+- Need to rewrite the move-forward action becuase it'd apparently illegal.
+
+05:09PM POMODORO #5:
+- Started finding ways to rewrite move-forward, asked chatGPT and found something that may work.
+- Changing thinking from forall loops to writing preconditions that satisifies everything instead.
+- HOPEFULLY BY NEXT POMODORO IT WILL WORK!
+
+05:40PM POMODORO #6:
+- IT WORKED! Removed all forall loops and thought about it thoroughly
+- Working on the Python side of things now.
+
+08:40PM POMODORO #7: [PAUSED]
+09:22PM CONT 16:33 LEFT
+- Started creating a simple maze problem creator that should help with generating the problems
+- Idea is that the maze is 10x10 grid x1->10, y1->10.
+	- Click on the screen to add it to the maze, right click to set it to a start, right click again to make it a goal, left click on it to remove it.
+	- There is no requirement to make sure that everything is connected.
+	- Close the program to export the data to a PDDL file
+	- Decided against rewriting the whole thing in Python (too long) for now.
+
+09:43PM POMODORO #8:
+- Working on the UI, managed to check cursor movements.
+- Now adding the functionality in the previous pomodoro.
+
+10:17PM POMODORO #9:
+- Finished creating the goal and start tile functionality, now need to test it next pomodoro
+- Hopefully everything works then all I need to do is export the data into some PDDL problem
+- Most likely going to do it in UP as I mentioned earlier, now reconsidering re-writing the domain (even though it might be a pain)
+
+11:00PM POMODORO #10:
+- Started working on trying to convert the information into UP then into PDDL.
+- So far, the position objects have been created and I've managed to get the domain from the PDDL file into UP.
+
+11:31PM POMODORO #11: [NO BREAK]
+11:56PM POMODORO #12: [NO BREAK]
+12:21AM POMODORO #13: [PAUSED]
+- Managed to get some output finally, the maze does get converted directly into PDDL, however I just noticed a logical flaw
+- As long as one of x is available, for some value of y, then all of that x will be available for any y. Which sort of defeats the purpose of the whole maze
+- Need to potentially re-jig the coordinate system so that it recognises the maze properly.
+- Also I need to clean up the code massively, I'ts super ugly at the moment.
+- The problem file has yet to be tested, but comparing it to maze0 which I made, it should work (crossed fingers :>) ).
+
+12:29AM END
+
+
+3RD JANUARY
+-----------
+
+01:05PM POMODORO #1:
+- Instead of only thinking about the movement of the player, think about what tiles the player can actually be on
+	- Added new predicate: path x, y that just makes sure that the player can actually be at that tile
+	- Instead of adding only the x, y coords on the path to the movement list, I've added all of them - I don't think this impacts performance as all initial values are loaded anyways and set to false.
+- After the new plan has been made, will test on some ADL planner and then OOP everything so that all the problems are in Python (hopefully making it easier to read and quicker)
+
+01:43PM POMODORO #2:
+- Managed to fully fix up the plan, it was acting a bit strange due to the formatting done by UP, so hopefully when I run the problem directly in UP it wont break.
+- Also the planner seems to do 3 right turns instead of doing 1 left turn which is odd.
+- Next pomodoro, validate that the plan actually works manually then I can sort out the automatic validation afterwards.
+
+02:17PM POMODORO #3:
+- Starting on creating the MazeProblemGenerator class, neatening everything up.
+- Managed to validate the problem, turns out south and north were the wrong way around.
+- Decided not to change make the current constants changeable, no need to add extra work.
+- Hopefully, with this, we can start generalising the problems.
+
+02:47PM POMOMDORO #4:
+- Worked a little more on it, filling in the functions
+- Reconsidering making the constants into changeable variables
+- Need to think about structure of creator.py - can I keep the constant outside of the object and have it still working in another file?
+
+04:44PM POMODORO #5:
+- Finished writing MazeProblemGenerator class
+- Will need to test if its working in next pomodoro
+
+06:26PM POMODORO #6:
+- Problem generator works however the planner doesnt seem to support it, might be because of the unified-planner version
+- Working on testing it with the generalised planner seeing if it works
+- Changed generate_problem() a bit so that it can be called again once it has been closed.
+
+07:01PM POMODORO #7: [NO BREAK]
+- Planner is being strange, checked the supported planners but it's not recognising it at all. Trying to find a suitable workaround or find out what the issue is
+- OneShotPlanner nor BFGP are working
+- Testing BFGP on gripper again
+
+07:26PM POMODORO #8:
+- Its still being strange - played around with the Compiler but for some reason not even the most simple problem can be solved? really starting to think its the library at fault
+- Currently testing out the BFGP as i know it works with the current problem kind.
+
+08:00PM POMODORO #9:
+- Feeling like something is working because it is taking years to compile - I never let it finish, it was taking far too long
+- Finally managed to figure out the issue with the classical planner - turns out I just had no engines installed! So using fast-downward, its running quite quickly.
+- Also north and south work correctly
+- Next steps - create plan visualiser and engine that recognises disjunctions - could make this generalised plan using fast-downward as it seems to be pretty good (if its possible to do so)
+
+10:00PM EXTRA CHANGES
+- Fix recursion depth error - change to while loop instead of recursively calling _mainloop
+- It is possible to mark 2 start positions with no goal which is completely incorrect!
+
+10:15PM END (STUDYING ALGORITHMS :))
+
+
+4TH JANUARY
+-----------
+
+01:27PM POMODORO #1:
+- Many issues arose from the fact that the start and goal were in the wrong order when it's the "goal" turn to change.
+- Commited changes to project, as well as added a nice console output for the plan
+- Going to start working on the visualiser
+
+01:58PM POMODORO #2:
+- Creating tile class that can allow for easy conversions between pygame coords to tile placements
+- Will create a collection specifically for the Maze that can only hold Tile objects and will allow for easy removal of Tile objects.
+
+02:34PM POMODORO #3:
+- Added constants file for PDDL objects, display, colours etc.
+- Finished Tile object and realised I dont really need to make a whole Maze collection object
+- After refactoring generator.py, I can start working on the visual
+
+03:05PM POMODORO #4: [WORKED DURING BREAK]
+03:47PM POMODORO #5: [WORKED DURING BREAK]
+04:17PM POMODORO #6: [NO BREAK]
+04:43PM POMODORO #7:
+- Finished writing up whole new code structure
+- Removed unnecessary self objects and added abstraction for tiles
+- Moved constants to another file
+- Added comments and docstrings
+- Manually tested everything and it seems to be working
+- Now that we have tile objects it should be much easier to create the plan visuliser
+- Need to start thinking about generalised planning as well as how to solve problems in a certain amount of steps and statements in plans like for and if...do...
+- Overall, the classical side of things is basically done to a submittable standard but theres so much more to do... :(
+
+15TH JANUARY
+------------
+
+MEETING:
+- Investigate feasibility of generalised planning for mazes
+- Try on smaller variants of the maze problem
+- Is there a way to construct a generalised planner such that it runs quicker than a classical planner?
+- Modify Maze game so that a planner can execute it as fast as possible
+- Evaluate domains (i.e gripper works faster in generalised planning for large quantities of problems then classical planning)
+- Investigate with different sizes of problems
+- Is having more actions better? - Reducing branching factor?
+- Constraints on the length of the plan? - How does this affect our time
+
+NOTES UPTO 29TH FEB:
+--------------------
 - Observe plan and consider:
 	- Repeat until
 	- If path ahead do
@@ -24,3 +302,25 @@ https://www.tempastic.org/papers/CMU-CS-04-167.pdf
 https://arxiv.org/pdf/1705.08439.pdf
 
 - Use Deep Neural Networks
+
+
+50 MIN ON 10 MIN OFF
+--------------------
+
+29TH FEBRUARY
+-------------
+
+POMODORO #1:
+Damn...
+
+
+3RD MARCH
+---------
+
+POMODORO #1:
+- Managed to get an idea of how to simplify the problem
+- Decided to just imagine paths to nearby cells where it is possible
+- Let the generalised planner obtain the shortest path out of all possible paths
+- Then convert plan to written format in Python by observing a move from x->r
+- Generate mapping of points to direction from initial cell
+- r->x is left l->x is down
