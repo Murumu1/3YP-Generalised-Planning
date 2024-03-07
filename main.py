@@ -1,35 +1,12 @@
-from unified_planning.engines import CompilationKind
-from unified_planning.shortcuts import OneshotPlanner
+from generators import ComplexProblemGenerator, PartiallySolvedProblemGenerator
 import unified_planning as up
-from up_bfgp import BestFirstGeneralizedPlanner
-from generator import MazeProblemGenerator
+import unified_planning.shortcuts
 
-# pg = MazeProblemGenerator()
-# pg.generate_maze()
-# problem = pg.generate_problem("maze_problem")
-#
-# with OneshotPlanner(problem_kind=problem.kind) as planner:
-#     result = planner.solve(problem)
-#     if result.status == up.engines.PlanGenerationResultStatus.SOLVED_SATISFICING:
-#         print(f"Found plan with {len(result.plan.actions)} steps!")
-#         for i, action in enumerate(result.plan.actions):
-#             print(f"{i}: {action}")
-#     else:
-#         print("Unable to find a plan.")
+# TODO: Observe time taken to solve along side program lines
+# TODO: Add test suite and graphs to show performance of planners
+# TODO: Add argparse so planners can be run through terminal (ext.)
+# TODO: Start writing structure on report
 
-# problems = [
-#     problem_generator.generate_problem("maze_problem") for i in range(5)
-# ]
-#
-# with BestFirstGeneralizedPlanner(program_lines=20) as planner:
-#     result = planner.solve(problems)
-#     if result.status == up.engines.PlanGenerationResultStatus.SOLVED_SATISFICING:
-#         print(f"Found plan with {len(result.plan.actions)} steps!")
-#         for i, action in enumerate(result.plan.actions):
-#             print(f"{i}: {action}")
-#     else:
-#         print("Unable to find a plan.")
-
-pg = MazeProblemGenerator()
-pg.generate_maze()
-pg.generate_flattened_problem("maze")
+if __name__ == '__main__':
+    up.shortcuts.get_environment().credits_stream = None
+    PartiallySolvedProblemGenerator(5).solve_all(program_lines=15)

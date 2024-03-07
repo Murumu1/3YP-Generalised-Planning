@@ -1,4 +1,4 @@
-from constants import TILE_WIDTH, TILE_HEIGHT
+from util.constants import TILE_WIDTH, TILE_HEIGHT
 import pygame
 
 
@@ -19,9 +19,9 @@ class Tile:
         :param position: Position metrics: tile_position: tuple, pygame_position: tuple or tile: Tile
         """
 
-        tile_position = position.get("tile_position", None)
-        pygame_position = position.get("pygame_position", None)
-        tile = position.get("tile", None)
+        tile_position = position.get("tile_position")
+        pygame_position = position.get("pygame_position")
+        tile = position.get("tile")
 
         if pygame_position is not None:
             self._tile_position = (

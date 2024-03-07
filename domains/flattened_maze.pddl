@@ -16,7 +16,7 @@
     (at ?x - position)
   )
   
-  (:action move-up
+  (:action move
     :parameters (?x ?xn - position)
     :precondition (and
       (at ?x)
