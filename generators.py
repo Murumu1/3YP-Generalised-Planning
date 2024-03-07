@@ -57,12 +57,10 @@ class ComplexProblemGenerator(MazeProblemGenerator):
         # facing(?d) ?d = north := true
         problem.set_initial_value(problem.fluent(FACING)(direction_objects[0]), True)
 
-        # Start position
-        # at(?x ?y) ?x = s_x, ?y = s_y := true
+        # start: at(?s_x ?s_y) := true
         s_x, s_y = maze.start.get_position()
         problem.set_initial_value(problem.fluent(AT)(x_objects[s_x], y_objects[s_y]), True)
 
-        # Goal position
         # goal: at(g_x g_y)
         g_x, g_y = maze.goal.get_position()
         problem.add_goal(problem.fluent(AT)(x_objects[g_x], y_objects[g_y]))
@@ -70,37 +68,37 @@ class ComplexProblemGenerator(MazeProblemGenerator):
         return problem
 
 
-# TODO: Ensure that there can be multiple paths
 class PartiallySolvedProblemGenerator(MazeProblemGenerator):
     def __init__(self, problem_count: int):
         super().__init__(problem_count)
 
-        self._pointer = 0
-        self._current_maze = None
-        self._current_problem = None
-        self._current_visited = []
-
     # @override
     def _generate_problem(self, maze: Maze) -> Problem:
-        self._current_maze = maze
-        self._current_visited = []
+        self._tile_object_mapping = {}
+        self._maze = maze
         self._pointer = 0
 
         # Problem set-up
-        self._current_problem = self._reader.parse_problem("domains/flattened_maze.pddl")
-        self._current_problem.name = "maze_problem"
-        start_object = Object("start", self._current_problem.user_type(POSITION))
-        self._current_problem.add_object(start_object)
-        self._current_problem.set_initial_value(self._current_problem.fluent(AT)(start_object), True)
+        self._problem = self._reader.parse_problem("domains/flattened_maze.pddl")
+        self._problem.name = "maze_problem"
 
-        self._dfs(self._current_maze.start, start_object)
-        return self._current_problem
+        self._start_object = Object("start", self._problem.user_type(POSITION))
+        self._goal_object = Object("goal", self._problem.user_type(POSITION))
+
+        self._problem.add_object(self._start_object)
+        self._problem.add_object(self._goal_object)
+
+        self._problem.set_initial_value(self._problem.fluent(AT)(self._start_object), True)
+        self._problem.add_goal(self._problem.fluent(AT)(self._goal_object))
+
+        self._dfs(self._maze.start, self._start_object)
+        return self._problem
 
     # Performs depth-first search to locate paths along the maze
     def _dfs(self, current_tile: Tile, current_object: Object):
 
         # Ensure no tile is visited twice
-        self._current_visited.append(current_tile)
+        self._add_mapping(current_tile, current_object)
         current_position = current_tile.get_position()
 
         # Mapping of potential neighbour positions to maze tiles
@@ -111,22 +109,28 @@ class PartiallySolvedProblemGenerator(MazeProblemGenerator):
             f"r{self._pointer}": self._find_tile((current_position[0] + 1, current_position[1])),
         }
 
-        for i, neighbour in enumerate(neighbour_map.values()):
-            if neighbour is not None and neighbour not in self._current_visited:
+        for direction, neighbour in neighbour_map.items():
+            if neighbour is not None:
+                existing_mapping = [obj for obj in self._get_mapping(neighbour) if obj.name[0] == direction[0]]
+                if existing_mapping:
+                    self._problem.set_initial_value(
+                        self._problem.fluent(PATH)(current_object, existing_mapping[0]), True
+                    )
+                    continue
 
                 # Create object for neighbour tile
-                neighbour_object = Object(list(neighbour_map.keys())[i], self._current_problem.user_type(POSITION))
-                self._current_problem.add_object(neighbour_object)
+                if neighbour == self._maze.start:
+                    neighbour_object = self._start_object
+                elif neighbour == self._maze.goal:
+                    neighbour_object = self._goal_object
+                else:
+                    neighbour_object = Object(direction, self._problem.user_type(POSITION))
+                    self._problem.add_object(neighbour_object)
 
-                # path(?x ?xn) to and fro neighbouring tiles := true
-                self._current_problem.set_initial_value(
-                    self._current_problem.fluent(PATH)(current_object, neighbour_object), True)
-                self._current_problem.set_initial_value(
-                    self._current_problem.fluent(PATH)(neighbour_object, current_object), True)
-
-                # Set goal to at(neighbour) if it's the goal tile
-                if neighbour.get_position() == self._current_maze.goal.get_position():
-                    self._current_problem.add_goal(self._current_problem.fluent(AT)(neighbour_object))
+                # path(?x ?xn) to neighbour tile (xn) := true
+                self._problem.set_initial_value(
+                    self._problem.fluent(PATH)(current_object, neighbour_object), True
+                )
 
                 # Avoid repeating object names
                 self._pointer += 1
@@ -134,5 +138,5 @@ class PartiallySolvedProblemGenerator(MazeProblemGenerator):
 
     # Locates the tile object given its position in the maze
     def _find_tile(self, neighbour_position):
-        signal = [p for p in self._current_maze.tiles if p.get_position() == neighbour_position]
+        signal = [p for p in self._maze.tiles if p.get_position() == neighbour_position]
         return signal[0] if signal else None

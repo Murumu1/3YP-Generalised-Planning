@@ -1,6 +1,9 @@
+import sys
+
 import pygame
 from unified_planning.engines import CompilationKind
 import unified_planning as up
+from unified_planning.model import Object
 from up_bfgp import BestFirstGeneralizedPlanner
 from unified_planning.io import PDDLReader
 from unified_planning.shortcuts import Problem, OneshotPlanner
@@ -24,6 +27,8 @@ class MazeProblemGenerator:
 
         self._mazes = []
         self._problems = []
+        self._tile_object_mapping = {}
+
         for p in range(problem_count):
             curr_maze = self._generate_maze()
             self._mazes.append(curr_maze)
@@ -68,7 +73,6 @@ class MazeProblemGenerator:
         while not maze_generated:
             for event in pygame.event.get():
 
-                # Exit when pygame window has been closed
                 if event.type == pygame.QUIT:
                     maze_generated = True
                 if event.type == pygame.KEYDOWN:
@@ -76,19 +80,11 @@ class MazeProblemGenerator:
                         maze_generated = True
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
-
-                    # Obtain tile at mouse position after click
                     current_tile = Tile(pygame_position=pygame.mouse.get_pos())
-
-                    # Left-click event
                     if pygame.mouse.get_pressed()[0]:
-
-                        # Add tile to maze if tile not in maze
                         if current_tile not in maze:
                             maze.append(current_tile)
                             pygame.draw.rect(screen, FILLED_TILE, current_tile.get_rect())
-
-                        # Remove it otherwise
                         else:
                             maze.remove(current_tile)
                             if start is not None:
@@ -98,8 +94,6 @@ class MazeProblemGenerator:
                                 if current_tile == goal:
                                     goal = None
                             pygame.draw.rect(screen, BACKGROUND, current_tile.get_rect())
-
-                    # Right-click event
                     if pygame.mouse.get_pressed()[2]:
                         if current_tile in maze:
                             if to_change == START:
@@ -120,8 +114,29 @@ class MazeProblemGenerator:
         pygame.quit()
         return Maze(maze, start, goal)
 
+    def _add_mapping(self, tile: Tile, *pddl_objects: Object) -> None:
+        tile_hash = hash(tile)
+        pddl_objects = list(pddl_objects)
+        observed_mapping = self._tile_object_mapping.get(tile_hash)
+        if observed_mapping:
+            self._tile_object_mapping[tile_hash].extend(pddl_objects)
+        else:
+            self._tile_object_mapping[tile_hash] = pddl_objects
+
+    def _get_mapping(self, tile: Tile) -> list[Object]:
+        tile_hash = hash(tile)
+        return self._tile_object_mapping[tile_hash] if self._tile_object_mapping.get(tile_hash) else []
+
     def _generate_problem(self, maze: Maze) -> Problem:
         raise NotImplementedError
+
+    def display_problems(self) -> None:
+        """
+        Display problems for debugging purposes
+        """
+        for i, problem in enumerate(self._problems):
+            print(f"Problem {i}:")
+            print(problem, "\n")
 
     def solve_each(self) -> None:
         """
@@ -146,4 +161,4 @@ class MazeProblemGenerator:
         :param program_lines: constraint on the maximum number of lines available to the planner
         """
         with BestFirstGeneralizedPlanner(program_lines=program_lines) as planner:
-            planner.solve(self._problems)
+            planner.solve(self._problems, output_stream=sys.stdout)

@@ -51,5 +51,11 @@ class Tile:
             TILE_HEIGHT
         )
 
+    # Tiles are equal if they have the same position
     def __eq__(self, other) -> bool:
-        return self._tile_position == other.get_position()
+        if isinstance(other, Tile):
+            return self._tile_position == other.get_position()
+        return False
+
+    def __hash__(self):
+        return hash(self._tile_position)
