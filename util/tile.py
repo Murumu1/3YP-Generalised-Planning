@@ -1,4 +1,4 @@
-from util.constants import TILE_WIDTH, TILE_HEIGHT
+from util.constants import TILE_WIDTH, TILE_HEIGHT, TILE_COUNT
 import pygame
 
 
@@ -50,6 +50,14 @@ class Tile:
             TILE_WIDTH,
             TILE_HEIGHT
         )
+
+    def get_neighbours(self) -> list[tuple]:
+        neighbours = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+        positions = [
+            (x + self._tile_position[0], y + self._tile_position[1])
+            for x, y in neighbours
+        ]
+        return [p for p in positions if all(0 <= q < TILE_COUNT for q in p)]
 
     # Tiles are equal if they have the same position
     def __eq__(self, other) -> bool:

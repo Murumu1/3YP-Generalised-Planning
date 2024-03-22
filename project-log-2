@@ -324,3 +324,8 @@ POMODORO #1:
 - Then convert plan to written format in Python by observing a move from x->r
 - Generate mapping of points to direction from initial cell
 - r->x is left l->x is down
+
+7TH MARCH
+---------
+- Project mostly completed, now just need to make some final touches and remove bugs and other stuff
+- Need to add visual (maybe not since its not going to get marked...)

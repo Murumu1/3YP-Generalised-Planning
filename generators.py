@@ -6,8 +6,8 @@ from util.tile import Tile
 
 
 class ComplexProblemGenerator(MazeProblemGenerator):
-    def __init__(self, problem_count: int):
-        super().__init__(problem_count)
+    def __init__(self, problem_count: int, auto: bool = False):
+        super().__init__(problem_count, auto)
 
     # @override
     def _generate_problem(self, maze: Maze) -> Problem:
@@ -69,8 +69,8 @@ class ComplexProblemGenerator(MazeProblemGenerator):
 
 
 class PartiallySolvedProblemGenerator(MazeProblemGenerator):
-    def __init__(self, problem_count: int):
-        super().__init__(problem_count)
+    def __init__(self, problem_count: int, auto: bool = False):
+        super().__init__(problem_count, auto)
 
     # @override
     def _generate_problem(self, maze: Maze) -> Problem:
@@ -111,7 +111,10 @@ class PartiallySolvedProblemGenerator(MazeProblemGenerator):
 
         for direction, neighbour in neighbour_map.items():
             if neighbour is not None:
-                existing_mapping = [obj for obj in self._get_mapping(neighbour) if obj.name[0] == direction[0]]
+                existing_mapping = [
+                    obj for obj in self._get_mapping(neighbour)
+                    if obj.name[0] == direction[0] or obj == self._start_object or obj == self._goal_object
+                ]
                 if existing_mapping:
                     self._problem.set_initial_value(
                         self._problem.fluent(PATH)(current_object, existing_mapping[0]), True

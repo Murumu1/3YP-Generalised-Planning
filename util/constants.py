@@ -32,3 +32,6 @@ RIGHT_ROT = 'right-rot'
 LEFT_ROT = 'left-rot'
 FACING = 'facing'
 AT = 'at'
+
+# I/O
+MAZE_DIRECTORY = "mazes"
