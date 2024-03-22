@@ -3,8 +3,7 @@
   (:requirements 
     :strips 
     :typing 
-    :negative-preconditions 
-    :conditional-effects
+    :negative-preconditions
   )
 
   (:types 
