@@ -1,0 +1,35 @@
+Rough Structure
+
+Intro (1000 words)
+- PDDL
+- Classical? and Generalised planning
+- Blockly
+- Goals
+
+Maze generation and design (1000-2000 words)
+- Domain and problem
+- Variants
+- Visual of maze generation
+
+Solving maze problems (3000 words)
+(Include algorithms for these)
+- Classical?
+- Generalised with complex variant
+- Generalised with partially solved variant (DFS)
+- Time complexity
+- Measure of maze complexity (TODO)
+- Different Generalised planners
+
+Results (~500 words [more figures and images than words])
+- Graphs of efficiency in solution
+- Graphs of time taken with change in maze size and complexity
+
+Analysis (2000 words)
+- Analysis of both separately
+- Comparative analysis of both solutions
+- Optimal number of lines for generalised solution
+- Is generalised planning suitable?
+
+Conclusions (1500 words)
+
+
