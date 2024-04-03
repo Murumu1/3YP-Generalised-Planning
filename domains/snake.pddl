@@ -8,11 +8,11 @@
     :strips 
     :typing 
     :negative-preconditions
+    :equality
 )
 
-(:types
-    position
-)
+(:types position)
+(:constants dummypoint - position)
 
 (:predicates
     (path ?x ?y - position)
@@ -21,15 +21,16 @@
     (body-con ?x ?y - position)
     (blocked ?x - position)
     (apple-at ?x - position)
+    (spawn-apple ?x - position)
     (next-apple ?x ?y - position)
 )
 
 
 (:action move
-    :parameters (?head ?newhead ?tail ?newtail)
+    :parameters (?head ?newhead ?tail ?newtail - position)
     :precondition (and 
-        (path ?head ?newhead)
         (head-at ?head)
+        (path ?head ?newhead)
         (tail-at ?tail)
         (body-con ?newtail ?tail)
         (not (blocked ?newhead))
@@ -48,13 +49,15 @@
 )
 
 (:action move-and-eat
-    :parameters (?head ?newhead ?nextappleloc)
-    :precondition (and 
+    :parameters (?head ?newhead ?spawn ?nextspawn - position)
+    :precondition (and
         (head-at ?head)
         (path ?head ?newhead)
         (not (blocked ?newhead))
         (apple-at ?newhead)
-        (next-apple ?newhead ?nextappleloc)
+        (spawn-apple ?spawn)
+        (next-apple ?spawn ?nextspawn)
+        (not (= ?spawn dummypoint))
     )
     :effect (and
         (blocked ?newhead)
@@ -62,7 +65,30 @@
         (body-con ?newhead ?head)
         (not (head-at ?head))
         (not (apple-at ?newhead))
-        (apple-at ?nextappleloc)
+        (apple-at ?spawn)
+        (not (spawn-apple ?spawn))
+        (spawn-apple ?nextspawn)
     )
 )
+
+(:action move-and-eat-no-spawn
+    :parameters (?head ?newhead - position)
+    :precondition
+    (and
+        (head-at ?head)
+        (path ?head ?newhead)
+        (not (blocked ?newhead))
+        (apple-at ?newhead)
+        (spawn-apple dummypoint)
+    )
+    :effect
+    (and
+        (blocked ?newhead)
+        (head-at ?newhead)
+        (body-con ?newhead ?head)
+        (not (head-at ?head))
+        (not (apple-at ?newhead))
+    )
+)
+
 )
