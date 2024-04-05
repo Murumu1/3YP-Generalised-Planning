@@ -1,0 +1,507 @@
+import os.path
+import shutil
+import random
+import glob
+import math
+import unified_planning as up
+from typing import Union
+from unified_planning.engines import CompilationKind, PlanGenerationResultStatus
+from unified_planning.io import PDDLReader
+from unified_planning.model import Problem, Object
+from unified_planning.shortcuts import OneshotPlanner, get_environment, Not
+from matplotlib import image as mpimg
+from matplotlib import pyplot as plt
+from environment import *
+from constants import *
+from options import OptionManager
+
+
+class ProblemGenerator:
+
+    def __init__(self, domain_path, **options):
+        self._domain = domain_path
+        self._reader = PDDLReader()
+        self._option_manager = OptionManager()
+        self._set_arguments(**options)
+        self._set_problems()
+        get_environment().credits_stream = None
+
+    def _set_arguments(self, **options) -> None:
+        self._auto: bool = options.get("auto", False)
+        self._problem_count: int = options.get("problem_count", 10)
+        self._program_lines: int = options.get("program_lines", 10)
+
+        self._tile_size: int = options.get("tile_size", 5)
+        self._option_manager.set_tile_size(self._tile_size)
+
+        self._image_directory: str = options.get("image_directory", "images_temp")
+        self._plan_directory: str = options.get("plan_directory", "plan_temp")
+        self._problem_directory: str = options.get("problem_directory", "problem_temp")
+
+    def _set_problems(self) -> None:
+        self._clear_directory(self._image_directory)
+        self._problems: list[Problem] = []
+        self._environments: list[Environment] = []
+        for i in range(self._problem_count):
+            pygame.init()
+            environment = self._generate_environment()
+            self._environments.append(environment)
+            self._add_problem(environment)
+
+    @staticmethod
+    def _clear_directory(directory):
+        if os.path.isdir(directory):
+            shutil.rmtree(directory)
+        os.mkdir(directory)
+
+    def _generate_environment_manual(self) -> Environment:
+        pass
+
+    def _generate_environment_auto(self) -> Environment:
+        pass
+
+    def _generate_environment(self) -> Environment:
+        return self._generate_environment_auto() if self._auto else self._generate_environment_manual()
+
+    def _add_problem(self, environment: Environment) -> None:
+        self._problem = self._reader.parse_problem(f"domains/{self._domain}.pddl")
+        self._problem.name = f"{self._domain}{len(self._problems)}"
+        self._obj_map = {}
+        self._setup_problem(environment)
+        self._problems.append(self._problem)
+        print("[DEBUG] problem added")
+
+    def _setup_problem(self, environment: Environment) -> None:
+        raise NotImplementedError
+
+    def _add_mapping(self, env_obj: EnvironmentObject, *pddl_objects: Object) -> None:
+        eo_hash = hash(env_obj)
+        pddl_objects = list(pddl_objects)
+        observed_mapping = self._obj_map.get(eo_hash)
+        if observed_mapping:
+            self._obj_map[eo_hash].extend(pddl_objects)
+        else:
+            self._obj_map[eo_hash] = pddl_objects
+
+    def _get_mapping(self, env_obj: EnvironmentObject) -> Union[Object, list[Object]]:
+        eo_hash = hash(env_obj)
+        mapping = self._obj_map.get(eo_hash, [])
+        if len(mapping) == 1:
+            return mapping[0]
+        return mapping
+
+    def _save_pygame_environment(self, screen: pygame.Surface):
+        if not os.path.exists(self._image_directory):
+            os.makedirs(self._image_directory)
+        pygame.image.save(screen, f"{self._image_directory}/{self._domain}{len(self._environments)}.jpg")
+        print(f"[DEBUG] {self._domain} environment generated successfully")
+
+    # def save_as_pddl(self) -> None:
+    #     self._clear_directory(self._problem_directory)
+    #     for problem in self._problems:
+    #         file_path = f"{self._problem_directory}/{problem.name}.pddl"
+    #         open(file_path, 'a').close()
+    #         writer = PDDLWriter(problem)
+    #         writer.write_problem(file_path)
+
+    def display_problems(self) -> None:
+        """Display problems for debugging purposes"""
+        for i, problem in enumerate(self._problems):
+            print(f"Problem {i}:")
+            print(problem)
+
+    def display_images(self) -> None:
+        """Display images as iPython plots (For Notebook purposes only)"""
+        images = []
+        for img_path in glob.glob(f"{self._image_directory}/*.jpg"):
+            images.append(mpimg.imread(img_path))
+        plt.figure(figsize=(20, 10))
+        columns = math.floor(math.sqrt(len(images)))
+        for i, image in enumerate(images):
+            plt.subplot(len(images) // columns + 1, columns, i + 1)
+            plt.imshow(image)
+            plt.axis("off")
+
+    def solve_each(self) -> bool:
+        """Solves each problem one by one using classical planning"""
+        all_passing = True
+        for i, problem in enumerate(self._problems):
+            print(f"Plan {i + 1}:")
+            with OneshotPlanner(problem_kind=problem.kind) as planner:
+                result = planner.solve(problem)
+                print(f"Status: {result.status}")
+                if result.status == up.engines.PlanGenerationResultStatus.SOLVED_SATISFICING:
+                    print(f"Found plan with {len(result.plan.actions)} steps!")
+                    for j, action in enumerate(result.plan.actions):
+                        print(f"{j}: {action}")
+                else:
+                    print("Unable to find a plan.")
+                    all_passing = False
+            print("")
+        return all_passing
+
+    def solve_all(self) -> bool:
+        """Solves all problems at once using generalised planning"""
+        with up.environment.get_environment().factory.FewshotPlanner(name="bfgp") as planner:
+            planner.set_arguments(program_lines=self._program_lines, theory="cpp")
+            result = planner.solve(self._problems, output_stream=None)
+            return all(r == PlanGenerationResultStatus.SOLVED_SATISFICING for r in result)
+
+
+class _MazeProblemGenerator(ProblemGenerator):
+
+    def __init__(self, domain_path, **options):
+        super().__init__(domain_path, **options)
+
+    @staticmethod
+    def _change_special_tile(screen: pygame.Surface, special_tile: Tile, conflict_tile: Tile, new_tile: Tile,
+                             colour: tuple) -> tuple:
+
+        # If the special tile is already on the maze
+        if special_tile is not None:
+            old_special_tile = special_tile.get_rect()
+            pygame.draw.rect(screen, FILLED_TILE, old_special_tile)
+            special_tile.set_position(tile=new_tile)
+        else:
+            special_tile = new_tile
+
+        # If the new tile is the same as the conflict tile, override
+        if conflict_tile is not None:
+            if new_tile == conflict_tile:
+                conflict_tile = None
+
+        # Draw the new tile
+        pygame.draw.rect(screen, colour, new_tile.get_rect())
+        return special_tile, conflict_tile
+
+    def _generate_environment_manual(self) -> MazeEnvironment:
+
+        # Display set-up
+        pygame.init()
+        screen = pygame.display.set_mode(SCREEN_SIZE)
+        clock = pygame.time.Clock()
+        screen.fill(BACKGROUND)
+        maze_generated = False
+
+        # maze set-up
+        maze = TileCollection()
+        goal = None
+        start = None
+        to_change = START
+
+        while not maze_generated:
+            for event in pygame.event.get():
+
+                if event.type == pygame.QUIT:
+                    maze_generated = True
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RETURN:
+                        maze_generated = True
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    current_tile = Tile(pygame_position=pygame.mouse.get_pos())
+                    if pygame.mouse.get_pressed()[0]:
+                        if current_tile not in maze:
+                            maze.append(current_tile)
+                            pygame.draw.rect(screen, FILLED_TILE, current_tile.get_rect())
+                        else:
+                            maze.remove(current_tile)
+                            if start is not None:
+                                if current_tile == start:
+                                    start = None
+                            if goal is not None:
+                                if current_tile == goal:
+                                    goal = None
+                            pygame.draw.rect(screen, BACKGROUND, current_tile.get_rect())
+                    if pygame.mouse.get_pressed()[2]:
+                        if current_tile in maze:
+                            if to_change == START:
+                                start, goal = self._change_special_tile(screen, start, goal, current_tile, START_TILE)
+                                to_change = GOAL
+                            elif to_change == GOAL:
+                                goal, start = self._change_special_tile(screen, goal, start, current_tile, GOAL_TILE)
+                                to_change = START
+
+            pygame.display.flip()
+            clock.tick(60)
+
+        # Ensure start and goal has been set
+        if start is None or goal is None:
+            raise Exception("You must set a start [red] and a goal [green] by left clicking tiles.")
+
+        self._save_pygame_environment(screen)
+        pygame.quit()
+
+        return MazeEnvironment(maze, start, goal)
+
+    def _generate_environment_auto(self) -> MazeEnvironment:
+
+        # maze set-up
+        maze = TileCollection()
+        screen = pygame.display.set_mode(SCREEN_SIZE)
+        screen.fill(BACKGROUND)
+        available_locations = [(x, y) for x in range(self._tile_size) for y in range(self._tile_size)]
+
+        start_location, goal_location = random.sample(available_locations, 2)
+        start = Tile(tile_position=start_location)
+        goal = Tile(tile_position=goal_location)
+        maze.extend([start, goal])
+        pygame.draw.rect(screen, START_TILE, start.get_rect())
+        pygame.draw.rect(screen, GOAL_TILE, goal.get_rect())
+        pygame.display.flip()
+
+        current_tile = start
+        while True:
+            current_tile = Tile(tile_position=random.choice(current_tile.get_neighbours()))
+            if current_tile == goal:
+                break
+            if current_tile not in maze:
+                maze.append(current_tile)
+                pygame.draw.rect(screen, FILLED_TILE, current_tile.get_rect())
+                pygame.display.flip()
+
+        self._save_pygame_environment(screen)
+        pygame.quit()
+
+        return MazeEnvironment(maze, start, goal)
+
+
+class BlocklyMazeProblemGenerator(_MazeProblemGenerator):
+    def __init__(self, **options):
+        super().__init__("maze", **options)
+
+    # @override
+    def _setup_problem(self, maze: MazeEnvironment) -> None:
+
+        # Create objects
+        x_objects = [Object(f"x{i}", self._problem.user_type(POSITION)) for i in range(self._tile_size)]
+        y_objects = [Object(f"y{i}", self._problem.user_type(POSITION)) for i in range(self._tile_size)]
+        direction_objects = [Object(direction, self._problem.user_type("direction")) for direction in DIRECTIONS]
+        self._problem.add_objects(x_objects + y_objects + direction_objects)
+
+        # Set initial value for fluents
+        # inc(?a ?b) from x0->x9, y0->y9 := true
+        for i in range(1, self._tile_size):
+            self._problem.set_initial_value(self._problem.fluent(INC)(x_objects[i - 1], x_objects[i]), True)
+            self._problem.set_initial_value(self._problem.fluent(INC)(y_objects[i - 1], y_objects[i]), True)
+
+        # dec(?a ?b) from x9->x0 y9->y0 := true
+        for i in range(1, self._tile_size):
+            self._problem.set_initial_value(self._problem.fluent(DEC)(x_objects[i], x_objects[i - 1]), True)
+            self._problem.set_initial_value(self._problem.fluent(DEC)(y_objects[i], y_objects[i - 1]), True)
+
+        # path(?x ?y) for all tiles in maze := true
+        for tile in maze.tiles:
+            x, y = tile.get_position()
+            self._problem.set_initial_value(self._problem.fluent(PATH)(x_objects[x], y_objects[y]), True)
+
+        # is-{d}(?d) for all directions := true
+        for i in range(len(DIRECTIONS)):
+            self._problem.set_initial_value(self._problem.fluent(DIRECTION_CONDITIONS[i])(direction_objects[i]), True)
+
+        # right-rot(?d ?dn) for all directions, where dn is the direction to the right := true
+        for i in range(len(DIRECTIONS)):
+            self._problem.set_initial_value(self._problem.fluent(RIGHT_ROT)(
+                direction_objects[i],
+                direction_objects[i + 1 if i + 1 < len(DIRECTIONS) else 0]
+            ), True)
+
+        # left-rot(?d ?dn) for all directions, where dn is the direction to the left := true
+        for i in range(len(DIRECTIONS)):
+            self._problem.set_initial_value(self._problem.fluent(LEFT_ROT)(
+                direction_objects[i],
+                direction_objects[i - 1 if i - 1 >= 0 else len(DIRECTIONS) - 1]
+            ), True)
+
+        # facing(?d) ?d = north := true
+        self._problem.set_initial_value(self._problem.fluent(FACING)(direction_objects[0]), True)
+
+        # start: at(?s_x ?s_y) := true
+        s_x, s_y = maze.start.get_position()
+        self._problem.set_initial_value(self._problem.fluent(AT)(x_objects[s_x], y_objects[s_y]), True)
+
+        # goal: at(g_x g_y)
+        g_x, g_y = maze.goal.get_position()
+        self._problem.add_goal(self._problem.fluent(AT)(x_objects[g_x], y_objects[g_y]))
+
+
+class DirectionalProblemReducedMazeProblemGenerator(_MazeProblemGenerator):
+    def __init__(self, **options):
+        super().__init__("reduced_maze", **options)
+
+    # @override
+    def _setup_problem(self, maze: MazeEnvironment) -> None:
+        self._maze = maze
+        self._counter = 0
+
+        self._start_object = Object("start", self._problem.user_type(POSITION))
+        self._goal_object = Object("goal", self._problem.user_type(POSITION))
+        self._problem.add_object(self._start_object)
+        self._problem.add_object(self._goal_object)
+        self._problem.set_initial_value(self._problem.fluent(AT)(self._start_object), True)
+        self._problem.add_goal(self._problem.fluent(AT)(self._goal_object))
+        self._dfs(self._maze.start, self._start_object)
+
+    # Performs depth-first search to locate paths along the maze
+    # TODO: Change from u, d, l ,f to px-y (Or do this in another class)
+    def _dfs(self, current_tile: Tile, current_object: Object):
+
+        # Ensure no tile is visited twice
+        self._add_mapping(current_tile, current_object)
+        current_position = current_tile.get_position()
+
+        # Mapping of potential neighbour positions to maze tiles
+        neighbour_map = {
+            f"u{self._counter}": self._maze.tiles.find_tile((current_position[0], current_position[1] - 1)),
+            f"d{self._counter}": self._maze.tiles.find_tile((current_position[0], current_position[1] + 1)),
+            f"l{self._counter}": self._maze.tiles.find_tile((current_position[0] - 1, current_position[1])),
+            f"r{self._counter}": self._maze.tiles.find_tile((current_position[0] + 1, current_position[1])),
+        }
+
+        for direction, neighbour in neighbour_map.items():
+            if neighbour is not None:
+                existing_mapping = [
+                    obj for obj in self._get_mapping(neighbour)
+                    if obj.name[0] == direction[0] or obj == self._start_object or obj == self._goal_object
+                ]
+                if existing_mapping:
+                    self._problem.set_initial_value(
+                        self._problem.fluent(PATH)(current_object, existing_mapping[0]), True
+                    )
+                    continue
+
+                # Create object for neighbour tile
+                if neighbour == self._maze.start:
+                    neighbour_object = self._start_object
+                elif neighbour == self._maze.goal:
+                    neighbour_object = self._goal_object
+                else:
+                    neighbour_object = Object(direction, self._problem.user_type(POSITION))
+                    self._problem.add_object(neighbour_object)
+
+                # path(?x ?xn) to neighbour tile (xn) := true
+                self._problem.set_initial_value(
+                    self._problem.fluent(PATH)(current_object, neighbour_object), True
+                )
+
+                # Avoid repeating object names
+                self._counter += 1
+                self._dfs(neighbour, neighbour_object)
+
+    def _get_mapping(self, env_obj: Tile) -> list[Object]:
+        eo_hash = hash(env_obj)
+        mapping = self._obj_map.get(eo_hash, [])
+        return mapping
+
+
+class NonDirectionalProblemReducedMazeProblemGenerator(_MazeProblemGenerator):
+    def __init__(self, **options):
+        super().__init__("reduced_maze", **options)
+
+    def _setup_problem(self, maze: MazeEnvironment) -> None:
+        for tile in maze.tiles:
+            position = tile.get_position()
+            tile_obj = Object(f"p{position[0]}-{position[1]}", self._problem.user_type(POSITION))
+            self._add_mapping(tile, tile_obj)
+            self._problem.add_object(tile_obj)
+
+        for tile in maze.tiles:
+            for neighbour in maze.tiles.find_neighbours(tile):
+                neighbour_object = self._get_mapping(neighbour)
+                current_object = self._get_mapping(tile)
+                self._problem.set_initial_value(self._problem.fluent(PATH)(neighbour_object, current_object), True)
+                self._problem.set_initial_value(self._problem.fluent(PATH)(current_object, neighbour_object), True)
+
+        start_object = self._get_mapping(maze.start)
+        goal_object = self._get_mapping(maze.goal)
+
+        self._problem.set_initial_value(self._problem.fluent(AT)(start_object), True)
+        self._problem.add_goal(self._problem.fluent(AT)(goal_object))
+
+
+class SnakeProblemGenerator(ProblemGenerator):
+    def __init__(self, **options):
+        self._apple_count = options.get("apple_count", 5)
+        super().__init__("snake", **options)
+
+    def _generate_environment_auto(self) -> Environment:
+        board = TileCollection(
+            [Tile(tile_position=(x, y)) for x in range(self._tile_size) for y in range(self._tile_size)]
+        )
+        available_locations = board.copy()
+
+        start = available_locations.pop(random.randint(0, len(available_locations) - 1))
+        goals = random.sample(available_locations, self._apple_count)
+        apples = TileCollection()
+        for goal in goals:
+            apples.append(goal)
+
+        screen = pygame.display.set_mode(SCREEN_SIZE)
+        screen.fill(BACKGROUND)
+        for tile in board:
+            pygame.draw.rect(screen, FILLED_TILE, tile.get_rect())
+            pygame.display.flip()
+
+        current_colour = INITIAL_APPLE
+        for apple in apples:
+            pygame.draw.rect(screen, current_colour, apple.get_rect())
+            pygame.display.flip()
+            current_colour = self._darken_colour(current_colour)
+
+        pygame.draw.rect(screen, START_TILE, start.get_rect())
+        pygame.display.flip()
+
+        self._save_pygame_environment(screen)
+        pygame.quit()
+
+        return SnakeEnvironment(board, start, apples)
+
+    def _generate_environment_manual(self) -> Environment:
+        pass
+
+    def _setup_problem(self, environment: SnakeEnvironment) -> None:
+
+        for tile in environment.board:
+            position = tile.get_position()
+            tile_obj = Object(f"p{position[0]}-{position[1]}", self._problem.user_type(POSITION))
+            self._add_mapping(tile, tile_obj)
+            self._problem.add_object(tile_obj)
+
+        dummy_apple = Object(DUMMYPOINT, self._problem.user_type(POSITION))
+
+        for tile in environment.board:
+            for neighbour in environment.board.find_neighbours(tile):
+                neighbour_object = self._get_mapping(neighbour)
+                current_object = self._get_mapping(tile)
+                self._problem.set_initial_value(self._problem.fluent(PATH)(neighbour_object, current_object), True)
+                self._problem.set_initial_value(self._problem.fluent(PATH)(current_object, neighbour_object), True)
+
+        start_object = self._get_mapping(environment.start)
+
+        tail_tile = environment.board.find_neighbours(environment.start)[0]
+        tail_object = self._get_mapping(tail_tile)
+
+        self._problem.set_initial_value(self._problem.fluent(HEAD_AT)(start_object), True)
+        self._problem.set_initial_value(self._problem.fluent(TAIL_AT)(tail_object), True)
+        self._problem.set_initial_value(self._problem.fluent(BODY_CON)(start_object, tail_object), True)
+        self._problem.set_initial_value(self._problem.fluent(BLOCKED)(start_object), True)
+        self._problem.set_initial_value(self._problem.fluent(BLOCKED)(tail_object), True)
+        self._problem.set_initial_value(self._problem.fluent(APPLE_AT)(self._get_mapping(environment.apples[0])), True)
+        self._problem.set_initial_value(
+            self._problem.fluent(SPAWN_APPLE)(self._get_mapping(environment.apples[1])), True
+        )
+
+        for i in range(1, len(environment.apples)):
+            apple_obj = self._get_mapping(environment.apples[i])
+            if i + 1 < len(environment.apples):
+                next_apple_obj = self._get_mapping(environment.apples[i + 1])
+            else:
+                next_apple_obj = dummy_apple
+            self._problem.set_initial_value(self._problem.fluent(NEXT_APPLE)(apple_obj, next_apple_obj), True)
+
+        for i in range(len(environment.apples)):
+            self._problem.add_goal(Not(self._problem.fluent(APPLE_AT)(self._get_mapping(environment.apples[i]))))
+
+    @staticmethod
+    def _darken_colour(colour):
+        return round(colour[0] * 0.95), round(colour[1] * 0.95), round(colour[2] * 0.95)

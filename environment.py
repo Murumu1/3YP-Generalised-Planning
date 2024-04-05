@@ -1,7 +1,12 @@
 from collections import UserList
-from util.environment_object import EnvironmentObject
-from util.constants import TILE_WIDTH, TILE_HEIGHT, TILE_COUNT
+from constants import WIDTH, HEIGHT
+from dataclasses import dataclass
+from options import OptionManager
 import pygame
+
+
+class EnvironmentObject:
+    pass
 
 
 class Tile(EnvironmentObject):
@@ -18,6 +23,14 @@ class Tile(EnvironmentObject):
 
         At least one must be specified.
         """
+
+        self._option_manager = OptionManager()
+        self._tile_size = self._option_manager.get_tile_size()
+        self._tile_width, self._tile_height = (
+            WIDTH // self._tile_size,
+            HEIGHT // self._tile_size
+        )
+        
         self._tile_position = tuple[int, int]()
         if not any(self._is_tile_like(val) for val in position.values()):
             raise TypeError("No valid arguments found.")
@@ -49,8 +62,8 @@ class Tile(EnvironmentObject):
 
         if pygame_position is not None:
             self._tile_position = (
-                pygame_position[0] // TILE_WIDTH,
-                pygame_position[1] // TILE_HEIGHT
+                pygame_position[0] // self._tile_width,
+                pygame_position[1] // self._tile_height
             )
 
         elif self._tile_position is not None:
@@ -66,10 +79,10 @@ class Tile(EnvironmentObject):
     def get_rect(self) -> pygame.Rect:
         """Returns the pygame.Rect object of the tile"""
         return pygame.Rect(
-            self._tile_position[0] * TILE_WIDTH,
-            self._tile_position[1] * TILE_HEIGHT,
-            TILE_WIDTH,
-            TILE_HEIGHT
+            self._tile_position[0] * self._tile_width,
+            self._tile_position[1] * self._tile_height,
+            self._tile_width,
+            self._tile_height
         )
 
     def get_neighbours(self) -> list[tuple[int, int]]:
@@ -78,7 +91,7 @@ class Tile(EnvironmentObject):
             (x + self._tile_position[0], y + self._tile_position[1])
             for x, y in neighbours
         ]
-        return [p for p in positions if all(0 <= q < TILE_COUNT for q in p)]
+        return [p for p in positions if all(0 <= q < self._tile_size for q in p)]
 
     # Tiles are equal if they have the same position
     def __eq__(self, other) -> bool:
@@ -126,8 +139,27 @@ class TileCollection(UserList[Tile]):
         return signal[0] if signal else None
 
     def find_neighbours(self, tile: Tile) -> 'TileCollection':
-        valid_neighbours = tile.get_neighbours()
-        for neighbour in valid_neighbours:
-            if neighbour not in self.data:
-                self.data.remove(tile)
+        possible_neighbours = tile.get_neighbours()
+        valid_neighbours = []
+        for i, neighbour in enumerate(possible_neighbours):
+            if self.find_tile(neighbour):
+                valid_neighbours.append(neighbour)
         return TileCollection([self.find_tile(valid_neighbour) for valid_neighbour in valid_neighbours])
+
+
+class Environment:
+    pass
+
+
+@dataclass
+class MazeEnvironment(Environment):
+    tiles: TileCollection
+    start: Tile
+    goal: Tile
+
+
+@dataclass
+class SnakeEnvironment(Environment):
+    board: TileCollection
+    start: Tile
+    apples: TileCollection

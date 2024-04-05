@@ -6,23 +6,8 @@ START_TILE = (255, 0, 0)
 PLAYER = (0, 0, 255)
 INITIAL_APPLE = (0, 255, 0)
 
-
 # Display
 SCREEN_SIZE = WIDTH, HEIGHT = 500, 500
-
-
-# Tile
-TILE_COUNT = 5
-TILE_SIZE = TILE_WIDTH, TILE_HEIGHT = (
-    WIDTH // TILE_COUNT,
-    HEIGHT // TILE_COUNT
-)
-
-
-# Maze
-# Image directory
-# TODO: Move to config.ini
-MAZE_DIRECTORY = "mazes"
 
 # Direction constants
 DIRECTIONS = NORTH, EAST, SOUTH, WEST = 'north', 'east', 'south', 'west'
@@ -39,9 +24,6 @@ PATH = 'path'
 AT = 'at'
 START = 'start'
 GOAL = 'goal'
-
-# Snake
-SNAKE_DIRECTORY = "snake"
 
 HEAD_AT = 'head-at'
 TAIL_AT = 'tail-at'
