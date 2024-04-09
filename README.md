@@ -11,7 +11,7 @@ This project focuses on solving path finding problems using PDDL planning.
 ## Installation
 This code is being developed on a Nobara 38 machine.
 
-To install it use the following c:
+To install it use the following command:
 ```shell
 git clone https://gitlab.cs.man.ac.uk/m59511md/generalised-planning-to-solve-games.git
 ```
