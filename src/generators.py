@@ -44,10 +44,10 @@ from unified_planning.model import Problem, Object
 from unified_planning.shortcuts import OneshotPlanner, get_environment, Not
 from matplotlib import image as mpimg
 from matplotlib import pyplot as plt
-from environment import *
-from constants import *
+from src.environment import *
+from src.constants import *
 from options import OptionManager
-from validators import non_negative_and_non_zero
+from src.validators import non_negative_and_non_zero
 
 
 class ProblemGenerator:
@@ -82,8 +82,8 @@ class ProblemGenerator:
         self._screen_size = self._screen_length, self._screen_length
 
         # File management
-        self._image_directory: str = options.get("image_directory", "../images_temp")
-        self._plan_directory: str = options.get("plan_directory", "../plan_temp")
+        self._image_directory: str = options.get("image_directory", "../../images_temp")
+        self._plan_directory: str = options.get("plan_directory", "../../plan_temp")
         self._problem_directory: str = options.get("problem_directory", "problem_temp")
 
     def _set_problems(self) -> None:

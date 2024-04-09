@@ -1,5 +1,5 @@
 import argparse
-from generators import *
+from src.generators import *
 
 parser = argparse.ArgumentParser(description="PDDL Path Solver",
                                  formatter_class=argparse.RawTextHelpFormatter)

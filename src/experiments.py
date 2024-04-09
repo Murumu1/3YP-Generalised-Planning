@@ -19,10 +19,10 @@ Example usage::
 
 import signal
 import time
-from validators import non_negative_and_non_zero
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
-from generators import ProblemGenerator
+from src.generators import ProblemGenerator
+from src.validators import non_negative_and_non_zero
 
 
 def _limit_time(function, duration=60, *args, **kwargs):
