@@ -1,34 +1,34 @@
 from collections import UserList
-from constants import WIDTH, HEIGHT
 from dataclasses import dataclass
 from options import OptionManager
 import pygame
 
 
 class EnvironmentObject:
+    """Interface for objects to be used in environments."""
     pass
 
 
 class Tile(EnvironmentObject):
 
-    def __init__(self, **position):
+    def __init__(self, **position: tuple[int, int]) -> None:
         """
         Tile object for compiling locations and Pygame attributes.
+
         Arguments:
-            position: Input position which can be
+            position: At least one must be specified:
 
                 - The Tile position in Cartesian coordinates (tile_position=).
                 - The Tile position in Pygame coordinates (pygame_position=).
                 - Or an existing Tile object (tile=).
-
-        At least one must be specified.
         """
 
         self._option_manager = OptionManager()
         self._tile_size = self._option_manager.get_tile_size()
+        self._screen_length = self._option_manager.get_screen_length()
         self._tile_width, self._tile_height = (
-            WIDTH // self._tile_size,
-            HEIGHT // self._tile_size
+            self._screen_length // self._tile_size,
+            self._screen_length // self._tile_size
         )
         
         self._tile_position = tuple[int, int]()
@@ -36,9 +36,11 @@ class Tile(EnvironmentObject):
             raise TypeError("No valid arguments found.")
         self.set_position(**position)
 
+    # Ensures the instance is a Tile object.
     def _is_tile_like(self, instance):
         return self._is_point(instance) or isinstance(instance, Tile)
 
+    # Validates a tuple that corresponds to a position.
     @staticmethod
     def _is_point(instance):
         return isinstance(instance, tuple) and list(map(type, instance)) == [int, int]
@@ -48,7 +50,7 @@ class Tile(EnvironmentObject):
         Sets the position of the tile.
 
         Arguments:
-            position: Input position which can be
+            position: Input position which can be:
 
                 - The Tile position in Cartesian coordinates (tile_position=).
                 - The Tile position in Pygame coordinates (pygame_position=).
@@ -56,6 +58,7 @@ class Tile(EnvironmentObject):
 
         At least one must be specified.
         """
+
         tile_position = position.get("tile_position")
         pygame_position = position.get("pygame_position")
         tile = position.get("tile")
@@ -74,10 +77,12 @@ class Tile(EnvironmentObject):
 
     def get_position(self) -> tuple[int, int]:
         """Returns the position of the tile in tile coordinates"""
+
         return self._tile_position
 
     def get_rect(self) -> pygame.Rect:
         """Returns the pygame.Rect object of the tile"""
+
         return pygame.Rect(
             self._tile_position[0] * self._tile_width,
             self._tile_position[1] * self._tile_height,
@@ -86,6 +91,8 @@ class Tile(EnvironmentObject):
         )
 
     def get_neighbours(self) -> list[tuple[int, int]]:
+        """Obtains a list of all neighbours available from a Tile."""
+
         neighbours = [(0, 1), (1, 0), (0, -1), (-1, 0)]
         positions = [
             (x + self._tile_position[0], y + self._tile_position[1])
@@ -93,7 +100,7 @@ class Tile(EnvironmentObject):
         ]
         return [p for p in positions if all(0 <= q < self._tile_size for q in p)]
 
-    # Tiles are equal if they have the same position
+    # Tiles are equal if they have the same position.
     def __eq__(self, other) -> bool:
         if isinstance(other, Tile):
             return self._tile_position == other.get_position()
@@ -101,13 +108,19 @@ class Tile(EnvironmentObject):
             return self._tile_position == other
         return False
 
+    # Tile hash is given by its position.
     def __hash__(self):
         return hash(self._tile_position)
 
 
 class TileCollection(UserList[Tile]):
-
     def __init__(self, iterable=None):
+        """
+        A collection of Tile objects.
+
+        Arguments:
+            iterable (Iterable[Tile], optional): Optional list of Tile objects
+        """
         if iterable is None:
             self.data = []
         else:
@@ -128,6 +141,7 @@ class TileCollection(UserList[Tile]):
         else:
             self.data.extend(self._ensure_tile(item) for item in other)
 
+    # Ensures instance is a Tile object.
     @staticmethod
     def _ensure_tile(instance):
         if isinstance(instance, Tile):
@@ -135,10 +149,28 @@ class TileCollection(UserList[Tile]):
         raise TypeError(f"Tile object expected, instead got {type(instance).__name__}")
 
     def find_tile(self, position: tuple[int, int]) -> Tile:
+        """
+        Find a Tile object with the given position.
+
+        Arguments:
+            position (Tuple[int, int]): The position to search for.
+
+        Returns:
+            Tile: The Tile object found at the given position, or None if not found.
+        """
         signal = [tile for tile in self.data if tile.get_position() == position]
         return signal[0] if signal else None
 
     def find_neighbours(self, tile: Tile) -> 'TileCollection':
+        """
+        Find neighboring Tile objects for a given Tile.
+
+        Arguments:
+            tile (Tile): The Tile object to find neighbors for.
+
+        Returns:
+            TileCollection: A collection of neighboring Tile objects.
+        """
         possible_neighbours = tile.get_neighbours()
         valid_neighbours = []
         for i, neighbour in enumerate(possible_neighbours):
@@ -148,11 +180,20 @@ class TileCollection(UserList[Tile]):
 
 
 class Environment:
+    """Interface for environment classes."""
     pass
 
 
 @dataclass
 class MazeEnvironment(Environment):
+    """
+    A maze environment for defining a maze problem.
+
+    Attributes:
+        tiles (TileCollection): A collection of tiles composing the maze.
+        start (Tile): The starting tile in the maze.
+        goal (Tile): The goal tile in the maze.
+    """
     tiles: TileCollection
     start: Tile
     goal: Tile
@@ -160,6 +201,14 @@ class MazeEnvironment(Environment):
 
 @dataclass
 class SnakeEnvironment(Environment):
+    """
+    A snake environment for defining a snake problem.
+
+    Attributes:
+        board (TileCollection): A collection of tiles composing the game board.
+        start (Tile): The starting position of the snake.
+        apples (TileCollection): A collection of tiles representing the positions of apples.
+    """
     board: TileCollection
     start: Tile
     apples: TileCollection

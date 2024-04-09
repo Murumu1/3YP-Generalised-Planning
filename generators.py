@@ -1,3 +1,36 @@
+"""
+**Path finding Problem Generators**
+
+This module provides classes for generating various types of problems suitable for unified planning frameworks.
+
+Classes:
+    - ``ProblemGenerator``: Parent class for all problem generators, providing an interface for GUI and PDDL problem creation.
+    - ``BlocklyMazeProblemGenerator``: Generates maze problems similar to Blockly games maze problems.
+    - ``DirectionalProblemReducedMazeProblemGenerator``: Generates maze problems with only a move action, inferring direction.
+    - ``NonDirectionalProblemReducedMazeProblemGenerator``: Generates maze problems with only a move action, using location-based objects.
+    - ``SnakeProblemGenerator``: Generates snake problems.
+
+Example usage::
+
+    # Create a Blockly maze problem generator
+    blockly_maze_generator = BlocklyMazeProblemGenerator(problem_count=5)
+
+    # Save the generated problems as PDDL files
+    maze_problem.save_as_pddl()
+
+    # Display information about the generated problems
+    maze_problem.display_problems()
+
+    # Display images of the generated environments as plots
+    maze_problem.display_images()
+
+    # Solve each problem individually using classical planning
+    maze_problem.solve_each()
+
+    # Solve all problems at once using generalised planning
+    maze_problem.solve_all()
+"""
+
 import os.path
 import shutil
 import random
@@ -6,7 +39,7 @@ import math
 import unified_planning as up
 from typing import Union
 from unified_planning.engines import CompilationKind, PlanGenerationResultStatus
-from unified_planning.io import PDDLReader
+from unified_planning.io import PDDLReader, PDDLWriter
 from unified_planning.model import Problem, Object
 from unified_planning.shortcuts import OneshotPlanner, get_environment, Not
 from matplotlib import image as mpimg
@@ -14,11 +47,21 @@ from matplotlib import pyplot as plt
 from environment import *
 from constants import *
 from options import OptionManager
+from validators import non_negative_and_non_zero
 
 
 class ProblemGenerator:
 
     def __init__(self, domain_path, **options):
+        """
+        Parent class for all problem generators.
+        Provides an interface for GUI and PDDL problem creation.
+
+        Arguments:
+            domain_path (str): Path to PDDL domain file
+            **options: Additional options for problem generation.
+        """
+
         self._domain = domain_path
         self._reader = PDDLReader()
         self._option_manager = OptionManager()
@@ -26,20 +69,29 @@ class ProblemGenerator:
         self._set_problems()
         get_environment().credits_stream = None
 
+    @non_negative_and_non_zero
     def _set_arguments(self, **options) -> None:
+
+        # Problem generation
         self._auto: bool = options.get("auto", False)
         self._problem_count: int = options.get("problem_count", 10)
         self._program_lines: int = options.get("program_lines", 10)
-
         self._tile_size: int = options.get("tile_size", 5)
         self._option_manager.set_tile_size(self._tile_size)
+        self._screen_length = self._option_manager.get_screen_length()
+        self._screen_size = self._screen_length, self._screen_length
 
-        self._image_directory: str = options.get("image_directory", "images_temp")
-        self._plan_directory: str = options.get("plan_directory", "plan_temp")
+        # File management
+        self._image_directory: str = options.get("image_directory", "../images_temp")
+        self._plan_directory: str = options.get("plan_directory", "../plan_temp")
         self._problem_directory: str = options.get("problem_directory", "problem_temp")
 
     def _set_problems(self) -> None:
+        """Generates environments and problems."""
+
+        # Ensure image directory is clear before processing
         self._clear_directory(self._image_directory)
+
         self._problems: list[Problem] = []
         self._environments: list[Environment] = []
         for i in range(self._problem_count):
@@ -50,31 +102,57 @@ class ProblemGenerator:
 
     @staticmethod
     def _clear_directory(directory):
+
+        # Recreates a path to directory
         if os.path.isdir(directory):
             shutil.rmtree(directory)
         os.mkdir(directory)
 
     def _generate_environment_manual(self) -> Environment:
+        """Manual generation for environments."""
         pass
 
     def _generate_environment_auto(self) -> Environment:
+        """Automatic generation for environments."""
         pass
 
     def _generate_environment(self) -> Environment:
         return self._generate_environment_auto() if self._auto else self._generate_environment_manual()
 
     def _add_problem(self, environment: Environment) -> None:
+        """
+        Creates a PDDL problem and adds it to the problem collection.
+
+        Arguments:
+            environment (Environment): Environment describing the current problem.
+        """
+
+        self._obj_map = {}
         self._problem = self._reader.parse_problem(f"domains/{self._domain}.pddl")
         self._problem.name = f"{self._domain}{len(self._problems)}"
-        self._obj_map = {}
         self._setup_problem(environment)
         self._problems.append(self._problem)
         print("[DEBUG] problem added")
 
     def _setup_problem(self, environment: Environment) -> None:
+        """
+        Sets up a PDDL problem.
+
+        Arguments:
+            environment (Environment): Environment describing the current problem.
+        """
+
         raise NotImplementedError
 
     def _add_mapping(self, env_obj: EnvironmentObject, *pddl_objects: Object) -> None:
+        """
+        Adds mapping between environment objects and PDDL objects.
+
+        Arguments:
+            env_obj (EnvironmentObject): Environment object.
+            *pddl_objects (Object): PDDL objects.
+        """
+
         eo_hash = hash(env_obj)
         pddl_objects = list(pddl_objects)
         observed_mapping = self._obj_map.get(eo_hash)
@@ -84,6 +162,16 @@ class ProblemGenerator:
             self._obj_map[eo_hash] = pddl_objects
 
     def _get_mapping(self, env_obj: EnvironmentObject) -> Union[Object, list[Object]]:
+        """
+        Retrieves mapping for a given environment object.
+
+        Arguments:
+            env_obj (EnvironmentObject): Environment object.
+
+        Returns:
+            Union[Object, list[Object]]: PDDL object or list of PDDL objects.
+        """
+
         eo_hash = hash(env_obj)
         mapping = self._obj_map.get(eo_hash, [])
         if len(mapping) == 1:
@@ -91,71 +179,134 @@ class ProblemGenerator:
         return mapping
 
     def _save_pygame_environment(self, screen: pygame.Surface):
+        """
+        Saves a Pygame surface as an image.
+
+        Arguments:
+            screen (pygame.Surface): Pygame screen.
+        """
+
         if not os.path.exists(self._image_directory):
             os.makedirs(self._image_directory)
+
         pygame.image.save(screen, f"{self._image_directory}/{self._domain}{len(self._environments)}.jpg")
         print(f"[DEBUG] {self._domain} environment generated successfully")
 
-    # def save_as_pddl(self) -> None:
-    #     self._clear_directory(self._problem_directory)
-    #     for problem in self._problems:
-    #         file_path = f"{self._problem_directory}/{problem.name}.pddl"
-    #         open(file_path, 'a').close()
-    #         writer = PDDLWriter(problem)
-    #         writer.write_problem(file_path)
+    def save_as_pddl(self) -> None:
+        """Saves the generated problems as PDDL files."""
+
+        self._clear_directory(self._problem_directory)
+        for problem in self._problems:
+            file_path = f"{self._problem_directory}/{problem.name}.pddl"
+            open(file_path, 'a').close()
+            writer = PDDLWriter(problem)
+            writer.write_problem(file_path)
 
     def display_problems(self) -> None:
-        """Display problems for debugging purposes"""
+        """Displays information about the generated problems."""
+
         for i, problem in enumerate(self._problems):
             print(f"Problem {i}:")
             print(problem)
 
     def display_images(self) -> None:
-        """Display images as iPython plots (For Notebook purposes only)"""
+        """Displays images of the generated environments as iPython plots."""
+
         images = []
         for img_path in glob.glob(f"{self._image_directory}/*.jpg"):
             images.append(mpimg.imread(img_path))
+
         plt.figure(figsize=(20, 10))
+
         columns = math.floor(math.sqrt(len(images)))
         for i, image in enumerate(images):
             plt.subplot(len(images) // columns + 1, columns, i + 1)
             plt.imshow(image)
             plt.axis("off")
 
-    def solve_each(self) -> bool:
-        """Solves each problem one by one using classical planning"""
-        all_passing = True
+    def solve_each(self) -> list:
+        """
+        Solves each problem individually using classical planning.
+
+        Returns:
+            list: A list containing information about the results of solving each problem.
+        """
+
+        results = []
         for i, problem in enumerate(self._problems):
             print(f"Plan {i + 1}:")
+
             with OneshotPlanner(problem_kind=problem.kind) as planner:
                 result = planner.solve(problem)
                 print(f"Status: {result.status}")
+
                 if result.status == up.engines.PlanGenerationResultStatus.SOLVED_SATISFICING:
                     print(f"Found plan with {len(result.plan.actions)} steps!")
                     for j, action in enumerate(result.plan.actions):
                         print(f"{j}: {action}")
+                    results.append(result)
+
                 else:
                     print("Unable to find a plan.")
-                    all_passing = False
-            print("")
-        return all_passing
 
-    def solve_all(self) -> bool:
-        """Solves all problems at once using generalised planning"""
+            print("")
+
+        return results
+
+    def solve_all(self) -> list[PlanGenerationResultStatus]:
+        """Solves all problems at once using generalised planning
+
+        Returns:
+            list[PlanGenerationResultStatus]: A list containing information about the results of solving each problem.
+        """
+
         with up.environment.get_environment().factory.FewshotPlanner(name="bfgp") as planner:
-            planner.set_arguments(program_lines=self._program_lines, theory="cpp")
-            result = planner.solve(self._problems, output_stream=None)
-            return all(r == PlanGenerationResultStatus.SOLVED_SATISFICING for r in result)
+            planner.set_arguments(
+                program_lines=self._program_lines,
+                theory="cpp",
+                translated_problem_dir=self._plan_directory + "/"
+            )
+
+            results = planner.solve(self._problems, output_stream=None)
+            if all(r == PlanGenerationResultStatus.SOLVED_SATISFICING for r in results):
+                print("Plan found successfully")
+
+            return results
 
 
 class _MazeProblemGenerator(ProblemGenerator):
 
     def __init__(self, domain_path, **options):
+        """
+        Generates maze problems as MazeEnvironment instances.
+        Inherits from ProblemGenerator.
+
+        Arguments:
+            domain_path (str): Path to the domain.
+            **options: Additional options for problem generation.
+        """
+
         super().__init__(domain_path, **options)
 
     @staticmethod
-    def _change_special_tile(screen: pygame.Surface, special_tile: Tile, conflict_tile: Tile, new_tile: Tile,
+    def _change_special_tile(screen: pygame.Surface,
+                             special_tile: Tile,
+                             conflict_tile: Tile,
+                             new_tile: Tile,
                              colour: tuple) -> tuple:
+        """
+        Changes the start/goal tile on the maze.
+
+        Arguments:
+            screen (pygame.Surface): Pygame screen.
+            special_tile (Tile): The special tile to change.
+            conflict_tile (Tile): The conflicting tile.
+            new_tile (Tile): The new tile to be set as special.
+            colour (tuple): RGB color tuple for drawing the tile.
+
+        Returns:
+            tuple: Updated special tile and conflict tile.
+        """
 
         # If the special tile is already on the maze
         if special_tile is not None:
@@ -175,23 +326,32 @@ class _MazeProblemGenerator(ProblemGenerator):
         return special_tile, conflict_tile
 
     def _generate_environment_manual(self) -> MazeEnvironment:
+        """
+        Generates maze environment manually.
 
-        # Display set-up
+        Returns:
+            MazeEnvironment: Generated maze environment.
+        """
+
+        # Display set-up.
         pygame.init()
-        screen = pygame.display.set_mode(SCREEN_SIZE)
+        screen = pygame.display.set_mode(self._screen_size)
         clock = pygame.time.Clock()
         screen.fill(BACKGROUND)
         maze_generated = False
 
-        # maze set-up
+        # Maze set-up.
         maze = TileCollection()
         goal = None
         start = None
+
+        # Determines what tile is modified on right click.
         to_change = START
 
         while not maze_generated:
             for event in pygame.event.get():
 
+                # Exit if enter is pressed or when the window is closed.
                 if event.type == pygame.QUIT:
                     maze_generated = True
                 if event.type == pygame.KEYDOWN:
@@ -199,7 +359,11 @@ class _MazeProblemGenerator(ProblemGenerator):
                         maze_generated = True
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
+
+                    # Tile at cursor position
                     current_tile = Tile(pygame_position=pygame.mouse.get_pos())
+
+                    # Left click modifies visibility of a tile on the screen.
                     if pygame.mouse.get_pressed()[0]:
                         if current_tile not in maze:
                             maze.append(current_tile)
@@ -213,6 +377,8 @@ class _MazeProblemGenerator(ProblemGenerator):
                                 if current_tile == goal:
                                     goal = None
                             pygame.draw.rect(screen, BACKGROUND, current_tile.get_rect())
+
+                    # Right click add/changes the start/goal tile.
                     if pygame.mouse.get_pressed()[2]:
                         if current_tile in maze:
                             if to_change == START:
@@ -235,13 +401,20 @@ class _MazeProblemGenerator(ProblemGenerator):
         return MazeEnvironment(maze, start, goal)
 
     def _generate_environment_auto(self) -> MazeEnvironment:
+        """
+        Generates maze environment automatically.
 
-        # maze set-up
+        Returns:
+            MazeEnvironment: Generated maze environment.
+        """
+
+        # Maze set-up.
         maze = TileCollection()
-        screen = pygame.display.set_mode(SCREEN_SIZE)
+        screen = pygame.display.set_mode(self._screen_size)
         screen.fill(BACKGROUND)
         available_locations = [(x, y) for x in range(self._tile_size) for y in range(self._tile_size)]
 
+        # Selects the start and goal locations randomly.
         start_location, goal_location = random.sample(available_locations, 2)
         start = Tile(tile_position=start_location)
         goal = Tile(tile_position=goal_location)
@@ -250,6 +423,7 @@ class _MazeProblemGenerator(ProblemGenerator):
         pygame.draw.rect(screen, GOAL_TILE, goal.get_rect())
         pygame.display.flip()
 
+        # Iteratively chooses a random neighbour until a path has been created.
         current_tile = start
         while True:
             current_tile = Tile(tile_position=random.choice(current_tile.get_neighbours()))
@@ -268,9 +442,15 @@ class _MazeProblemGenerator(ProblemGenerator):
 
 class BlocklyMazeProblemGenerator(_MazeProblemGenerator):
     def __init__(self, **options):
+        """
+        Generates maze problems in a similar fashion to Blockly games maze problems.
+
+        Arguments:
+            **options: Additional options for problem generation.
+        """
+
         super().__init__("maze", **options)
 
-    # @override
     def _setup_problem(self, maze: MazeEnvironment) -> None:
 
         # Create objects
@@ -327,13 +507,24 @@ class BlocklyMazeProblemGenerator(_MazeProblemGenerator):
 
 class DirectionalProblemReducedMazeProblemGenerator(_MazeProblemGenerator):
     def __init__(self, **options):
+        """
+        Generates maze problems with only a move action.
+        Objects are named in a way so that direction of travel can be inferred
+
+        Arguments:
+            **options: Additional options for problem generation.
+        """
+
         super().__init__("reduced_maze", **options)
 
-    # @override
     def _setup_problem(self, maze: MazeEnvironment) -> None:
+
         self._maze = maze
+
+        # Counter to ensure no object name is repeated
         self._counter = 0
 
+        # Object set-up
         self._start_object = Object("start", self._problem.user_type(POSITION))
         self._goal_object = Object("goal", self._problem.user_type(POSITION))
         self._problem.add_object(self._start_object)
@@ -342,8 +533,6 @@ class DirectionalProblemReducedMazeProblemGenerator(_MazeProblemGenerator):
         self._problem.add_goal(self._problem.fluent(AT)(self._goal_object))
         self._dfs(self._maze.start, self._start_object)
 
-    # Performs depth-first search to locate paths along the maze
-    # TODO: Change from u, d, l ,f to px-y (Or do this in another class)
     def _dfs(self, current_tile: Tile, current_object: Object):
 
         # Ensure no tile is visited twice
@@ -359,6 +548,8 @@ class DirectionalProblemReducedMazeProblemGenerator(_MazeProblemGenerator):
         }
 
         for direction, neighbour in neighbour_map.items():
+
+            # If there is an existing object for the neighbour with the same direction: re-use it.
             if neighbour is not None:
                 existing_mapping = [
                     obj for obj in self._get_mapping(neighbour)
@@ -389,6 +580,8 @@ class DirectionalProblemReducedMazeProblemGenerator(_MazeProblemGenerator):
                 self._dfs(neighbour, neighbour_object)
 
     def _get_mapping(self, env_obj: Tile) -> list[Object]:
+
+        # Modified to ensure output is always a list
         eo_hash = hash(env_obj)
         mapping = self._obj_map.get(eo_hash, [])
         return mapping
@@ -396,15 +589,26 @@ class DirectionalProblemReducedMazeProblemGenerator(_MazeProblemGenerator):
 
 class NonDirectionalProblemReducedMazeProblemGenerator(_MazeProblemGenerator):
     def __init__(self, **options):
+        """
+        Generates maze problems with only a move action.
+        Objects are the location of the tiles in the maze.
+
+        Arguments:
+            **options: Additional options for problem generation.
+        """
+
         super().__init__("reduced_maze", **options)
 
     def _setup_problem(self, maze: MazeEnvironment) -> None:
+
+        # Maps all tiles to PDDL objects.
         for tile in maze.tiles:
             position = tile.get_position()
             tile_obj = Object(f"p{position[0]}-{position[1]}", self._problem.user_type(POSITION))
             self._add_mapping(tile, tile_obj)
             self._problem.add_object(tile_obj)
 
+        # Creates all required valid paths between tiles.
         for tile in maze.tiles:
             for neighbour in maze.tiles.find_neighbours(tile):
                 neighbour_object = self._get_mapping(neighbour)
@@ -420,24 +624,40 @@ class NonDirectionalProblemReducedMazeProblemGenerator(_MazeProblemGenerator):
 
 
 class SnakeProblemGenerator(ProblemGenerator):
+
     def __init__(self, **options):
+        """
+        Generates snake problems.
+        Inherits from ProblemGenerator.
+
+        Arguments:
+            **options: Additional options for problem generation.
+        """
+
         self._apple_count = options.get("apple_count", 5)
         super().__init__("snake", **options)
 
     def _generate_environment_auto(self) -> Environment:
+        """
+        Generates snake environment automatically.
+
+        Returns:
+            Environment: Generated snake environment.
+        """
+
         board = TileCollection(
             [Tile(tile_position=(x, y)) for x in range(self._tile_size) for y in range(self._tile_size)]
         )
         available_locations = board.copy()
 
+        # Selects a random start position and random positions for apples.
         start = available_locations.pop(random.randint(0, len(available_locations) - 1))
         goals = random.sample(available_locations, self._apple_count)
-        apples = TileCollection()
-        for goal in goals:
-            apples.append(goal)
+        apples = TileCollection(goals)
 
-        screen = pygame.display.set_mode(SCREEN_SIZE)
+        screen = pygame.display.set_mode(self._screen_size)
         screen.fill(BACKGROUND)
+
         for tile in board:
             pygame.draw.rect(screen, FILLED_TILE, tile.get_rect())
             pygame.display.flip()
@@ -457,18 +677,24 @@ class SnakeProblemGenerator(ProblemGenerator):
         return SnakeEnvironment(board, start, apples)
 
     def _generate_environment_manual(self) -> Environment:
+        """
+        Generates snake environment manually.
+
+        Returns:
+            Environment: Generated snake environment.
+        """
         pass
 
     def _setup_problem(self, environment: SnakeEnvironment) -> None:
 
+        # Maps all tiles to PDDL objects.
         for tile in environment.board:
             position = tile.get_position()
             tile_obj = Object(f"p{position[0]}-{position[1]}", self._problem.user_type(POSITION))
             self._add_mapping(tile, tile_obj)
             self._problem.add_object(tile_obj)
 
-        dummy_apple = Object(DUMMYPOINT, self._problem.user_type(POSITION))
-
+        # Creates all required valid paths between tiles.
         for tile in environment.board:
             for neighbour in environment.board.find_neighbours(tile):
                 neighbour_object = self._get_mapping(neighbour)
@@ -478,19 +704,29 @@ class SnakeProblemGenerator(ProblemGenerator):
 
         start_object = self._get_mapping(environment.start)
 
+        # Tail is set to a random neighbour of the head.
         tail_tile = environment.board.find_neighbours(environment.start)[0]
         tail_object = self._get_mapping(tail_tile)
 
+        # Body.
         self._problem.set_initial_value(self._problem.fluent(HEAD_AT)(start_object), True)
         self._problem.set_initial_value(self._problem.fluent(TAIL_AT)(tail_object), True)
         self._problem.set_initial_value(self._problem.fluent(BODY_CON)(start_object, tail_object), True)
+
+        # Blocked locations.
         self._problem.set_initial_value(self._problem.fluent(BLOCKED)(start_object), True)
         self._problem.set_initial_value(self._problem.fluent(BLOCKED)(tail_object), True)
+
+        # Apple locations.
         self._problem.set_initial_value(self._problem.fluent(APPLE_AT)(self._get_mapping(environment.apples[0])), True)
         self._problem.set_initial_value(
             self._problem.fluent(SPAWN_APPLE)(self._get_mapping(environment.apples[1])), True
         )
 
+        # Final spawn once goal apple has been spawned.
+        dummy_apple = Object(DUMMYPOINT, self._problem.user_type(POSITION))
+
+        # next-apple(?appleloc ?nextappleloc) for all apples := true
         for i in range(1, len(environment.apples)):
             apple_obj = self._get_mapping(environment.apples[i])
             if i + 1 < len(environment.apples):
@@ -499,9 +735,20 @@ class SnakeProblemGenerator(ProblemGenerator):
                 next_apple_obj = dummy_apple
             self._problem.set_initial_value(self._problem.fluent(NEXT_APPLE)(apple_obj, next_apple_obj), True)
 
+        # goals += apple-at(?appleloc)
         for i in range(len(environment.apples)):
             self._problem.add_goal(Not(self._problem.fluent(APPLE_AT)(self._get_mapping(environment.apples[i]))))
 
     @staticmethod
     def _darken_colour(colour):
+        """
+        Darkens a given RGB color tuple.
+
+        Arguments:
+            colour (tuple): RGB color tuple.
+
+        Returns:
+            tuple: Darkened RGB color tuple.
+        """
+
         return round(colour[0] * 0.95), round(colour[1] * 0.95), round(colour[2] * 0.95)

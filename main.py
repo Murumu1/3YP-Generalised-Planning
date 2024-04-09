@@ -11,7 +11,7 @@ parser.add_argument("-d", "--domain", choices=domain_choices, default="blockly_m
 parser.add_argument("-r", "--display_problems", type=bool, default=False, required=False)
 parser.add_argument("-t", "--solution_type", choices=solution_choices, default="each", required=False)
 
-parser.add_argument("-a", "--auto", type=bool, default=True, required=False)
+parser.add_argument("-a", "--auto", action='store_true')
 parser.add_argument("-p", "--problem_count", type=int, default=5, required=False)
 parser.add_argument("-l", "--program_lines", type=int, default=10, required=False)
 parser.add_argument("-s", "--tile_size", type=int, default=5, required=False)
@@ -23,6 +23,14 @@ parser.add_argument("-c", "--apple_count", type=int, default="5", required=False
 if __name__ == '__main__':
     args = parser.parse_args()
     options = vars(args)
+
+    for key, value in options.items():
+        if isinstance(value, bool):
+            continue
+        elif isinstance(value, (int, float)):
+            if value < 1:
+                print(value)
+                raise ValueError(f"{key} should be non-negative and non-zero")
 
     generator = BlocklyMazeProblemGenerator
     if options["domain"] == "blockly_maze":
@@ -43,4 +51,3 @@ if __name__ == '__main__':
         generator.solve_each()
     elif options["solution_type"] == "all":
         generator.solve_all()
-

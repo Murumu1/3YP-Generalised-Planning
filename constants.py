@@ -6,17 +6,12 @@ START_TILE = (255, 0, 0)
 PLAYER = (0, 0, 255)
 INITIAL_APPLE = (0, 255, 0)
 
-# Display
-SCREEN_SIZE = WIDTH, HEIGHT = 500, 500
-
-# Direction constants
+# PDDL Attributes
 DIRECTIONS = NORTH, EAST, SOUTH, WEST = 'north', 'east', 'south', 'west'
 DIRECTION_CONDITIONS = IS_NORTH, IS_EAST, IS_SOUTH, IS_WEST = 'is-north', 'is-east', 'is-south', 'is-west'
 RIGHT_ROT = 'right-rot'
 LEFT_ROT = 'left-rot'
 FACING = 'facing'
-
-# Position constants
 POSITION = 'position'
 INC = 'inc'
 DEC = 'dec'
@@ -24,7 +19,6 @@ PATH = 'path'
 AT = 'at'
 START = 'start'
 GOAL = 'goal'
-
 HEAD_AT = 'head-at'
 TAIL_AT = 'tail-at'
 BODY_CON = 'body-con'
@@ -33,6 +27,3 @@ APPLE_AT = 'apple-at'
 NEXT_APPLE = 'next-apple'
 SPAWN_APPLE = 'spawn-apple'
 DUMMYPOINT = 'dummypoint'
-
-
-

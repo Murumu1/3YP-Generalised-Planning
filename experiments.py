@@ -1,11 +1,44 @@
+"""
+**Experiments for path finding problems**
+
+This module provides experiments to test classical and generalised planners.
+Requires generators.py.
+
+Functions:
+    - ``variable_experiment``: Tests a planner on a variable under time.
+    - ``efficiency_experiment``: Compares efficiency of solution between classical and generalised planners
+
+Example usage::
+
+    # Create an experiment
+    plot = variable_experiment(SnakeProblemGenerator, problem_count=3)
+
+    # Display the plot
+    plot.show()
+"""
+
 import signal
-import numpy as np
-from matplotlib import pyplot as plt
 import time
+from validators import non_negative_and_non_zero
+from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
 from generators import ProblemGenerator
 
 
 def _limit_time(function, duration=60, *args, **kwargs):
+    """
+    Limit the execution time of a function.
+
+    Arguments:
+        function (callable): The function to be executed.
+        duration (int): The maximum duration for the function to execute, in seconds.
+        *args: Positional arguments to pass to the function.
+        **kwargs: Keyword arguments to pass to the function.
+
+    Returns:
+        bool: True if the function executes within the specified duration, False otherwise.
+    """
+
     signal.signal(signal.SIGALRM, lambda signum, frame: TimeoutError())
     signal.alarm(duration)
 
@@ -20,24 +53,111 @@ def _limit_time(function, duration=60, *args, **kwargs):
     return feedback
 
 
-def tile_size_experiment_classical(generator: type[ProblemGenerator],
-                                   min_size: int = 2,
-                                   max_size: int = 10,
-                                   step: int = 1):
+@non_negative_and_non_zero
+def variable_experiment(generator: type[ProblemGenerator],
+                        variable: str = 'tile_size',
+                        solution: str = 'classical',
+                        problem_count: int = 1,
+                        min_size: int = 2,
+                        max_size: int = 10,
+                        step: int = 1,
+                        timeout: int = 60) -> Figure:
+    """
+    Conducts an experiment varying a specified variable.
 
-    timings = np.array([])
-    tile_sizes = np.array([])
+    Arguments:
+        generator (Type[ProblemGenerator]): The type of problem generator to use.
+        variable (str): The variable to be varied.
+        solution (str): The solution method to use, either 'classical' or 'generalised'.
+        problem_count (int): The number of problems to generate and solve.
+        min_size (int): The minimum value of the variable.
+        max_size (int): The maximum value of the variable.
+        step (int): The step size for incrementing the variable.
+        timeout (int): The maximum time allowed for each experiment iteration, in seconds.
+
+    Returns:
+        Figure: A matplotlib figure object showing the experiment results.
+    """
+
+    timings = []
+    tile_sizes = []
     for i in range(min_size, max_size, step):
-        current_generator = generator(auto=True, tile_size=i, problem_count=1)
+
+        kwargs = {
+            'auto': True,
+            'problem_count': problem_count,
+            variable: i
+        }
+
+        current_generator = generator(**kwargs)
         start = time.time()
-        feedback = _limit_time(current_generator.solve_each)
+
+        if solution == 'classical':
+            f = current_generator.solve_each
+        elif solution == 'generalised':
+            f = current_generator.solve_all
+        else:
+            raise NameError("solution must be either 'classical' or 'generalised'.")
+
+        feedback = _limit_time(f, duration=timeout)
+        print(feedback)
         if feedback:
             end = time.time()
-            np.append(timings, (start - end))
-            np.append(tile_sizes, i)
+            timings.append(end - start)
+            tile_sizes.append(i)
+            current_generator.display_images()
+        else:
+            print("Couldn't finish in 60s")
 
-    plt.plot(tile_sizes, timings)
-    plt.ylabel("Time")
-    plt.xlabel("Tile Size")
-    plt.show()
+    fig = plt.figure()
+    plt.plot(tile_sizes, timings, figure=fig)
+    plt.ylabel("time", figure=fig)
+    plt.xlabel(variable, figure=fig)
 
+    return fig
+
+
+@non_negative_and_non_zero
+def efficiency_experiment(generator: type[ProblemGenerator],
+                          problem_count: int = 2,
+                          tile_size: int = 5):
+    """
+    Conducts an efficiency experiment comparing classical planning to generalised planning.
+
+    Arguments:
+        generator (Type[ProblemGenerator]): The type of problem generator to use.
+        problem_count (int): The number of problems to generate and solve.
+        tile_size (int): The size of the tiles in the environment.
+
+    Returns:
+        Figure: A matplotlib figure object showing the experiment results.
+    """
+    out_dir = 'efficiency_plan_directory'
+
+    kwargs = {
+        'auto': True,
+        'problem_count': problem_count,
+        'tile_size': tile_size,
+        'plan_directory': out_dir
+    }
+
+    scores = []
+
+    generator = generator(**kwargs)
+    classical_results = generator.solve_each()
+    generalised_results = generator.solve_all()
+
+    if len(classical_results) != len(generalised_results) or len(classical_results) != problem_count:
+        return RuntimeError("Results not generated correctly...")
+
+    generalised_plans = ...
+
+    for i in range(len(classical_results)):
+        scores.append(len(classical_results[i].plan) / len(generalised_plans[i]))
+
+    fig = plt.figure()
+    plt.plot(range(1, problem_count + 1), scores, figure=fig)
+    plt.ylabel("scores", figure=fig)
+    plt.xlabel("problem count", figure=fig)
+
+    return fig
