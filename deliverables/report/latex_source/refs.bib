@@ -1,0 +1,232 @@
+@inbook{russell2016artificial,
+  title={Artificial Intelligence: a modern approach},
+  author={Russell, Stuart J. and Norvig, Peter},
+  edition={3},
+  year={2009},
+  publisher={Pearson}
+}
+
+@article{roberts_evaluating_2014,
+	title = {Evaluating {Diversity} in {Classical} {Planning}},
+	volume = {24},
+	copyright = {Copyright (c) 2021 Proceedings of the International Conference on Automated Planning and Scheduling},
+	issn = {2334-0843},
+	url = {https://ojs.aaai.org/index.php/ICAPS/article/view/13649},
+	doi = {10.1609/icaps.v24i1.13649},
+	abstract = {Applications that require alternative plans challenge the single solution, single quality metric assumptions upon which many classical planners are designed and evaluated. To evaluate the distinctness of alternative plans (i.e., plan sets), researchers have created diversity metrics that often measure the set difference between the actions of plans. Many approaches for generating plan sets embed the same diversity metric in a weighted evaluation function to guide the search mechanism, thus confounding the search process with its evaluation. We discover that two diversity metrics fail to distinguish similar plans from each other or to identify plans with extraneous actions, so we introduce two new diversity metrics, {\textbackslash}emph\{uniqueness\} and {\textbackslash}emph\{overlap\}, to capture these cases. We then examine the tradeoffs of producing diverse plans while we control for plan length and metric interaction and confirm that metric interaction can significantly impact search performance.  We show that planners searching for plan sets must consider a third metric, {\textbackslash}emph\{parsimony\}, that prefers shorter plans while maximizing diversity.We evaluate three existing approaches for generating diverse plans and two new algorithms that are designed to explicitly manage diversity and interaction between the diversity and quality metrics. Our findings synthesize and extend recent results in plan diversity.},
+	language = {en},
+	urldate = {2024-04-22},
+	journal = {Proceedings of the International Conference on Automated Planning and Scheduling},
+	author = {Roberts, Mark and Howe, Adele and Ray, Indrajit},
+	month = may,
+	year = {2014},
+	keywords = {Classical Planning, Diverse Planning, Evaluation of Planning Systems},
+	pages = {253--261},
+	file = {Full Text PDF:/home/murumu1/Zotero/storage/UF739NKP/Roberts et al. - 2014 - Evaluating Diversity in Classical Planning.pdf:application/pdf},
+}
+
+@article{jimenez_review_2019,
+  author       = {Sergio Jim{\'{e}}nez Celorrio and
+                  Javier Segovia Aguas and
+                  Anders Jonsson},
+  title        = {A review of generalized planning},
+  journal      = {Knowl. Eng. Rev.},
+  volume       = {34},
+  pages        = {e5},
+  year         = {2019},
+  url          = {https://doi.org/10.1017/S0269888918000231},
+  doi          = {10.1017/S0269888918000231},
+  timestamp    = {Wed, 24 Jan 2024 16:27:10 +0100},
+  biburl       = {https://dblp.org/rec/journals/ker/CelorrioAJ19.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@article{segovia-aguas_representation_2022,
+  author       = {Javier Segovia Aguas and
+                  Yolanda E{-}Mart{\'{\i}}n and
+                  Sergio Jim{\'{e}}nez},
+  title        = {Representation and Synthesis of {C++} Programs for Generalized Planning},
+  journal      = {CoRR},
+  volume       = {abs/2206.14480},
+  year         = {2022},
+  url          = {https://doi.org/10.48550/arXiv.2206.14480},
+  doi          = {10.48550/ARXIV.2206.14480},
+  eprinttype    = {arXiv},
+  eprint       = {2206.14480},
+  timestamp    = {Wed, 06 Jul 2022 14:43:33 +0200},
+  biburl       = {https://dblp.org/rec/journals/corr/abs-2206-14480.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@incollection{strobel_mypddl_2020,
+	address = {Cham},
+	title = {{MyPDDL}: {Tools} for {Efficiently} {Creating} {PDDL} {Domains} and {Problems}},
+	isbn = {978-3-030-38561-3},
+	url = {https://doi.org/10.1007/978-3-030-38561-3_4},
+	abstract = {The Planning Domain Definition Language (PDDL) is the state-of-the-art language for specifying planning problems in artificial intelligence research. Writing and maintaining these planning problems, however, can be time-consuming and error- prone. To address this issue, we present myPDDL—a modular toolkit for developing and manipulating PDDL domains and problems. To evaluate myPDDL, we compare its features to existing knowledge engineering tools for PDDL. In a user test, we additionally assess two of its modules, namely the syntax highlighting feature and the type diagram generator. The users of syntax highlighting detected 36\% more errors than non-users in an erroneous domain file. The average time on task for questions on a PDDL type hierarchy was reduced by 48\% when making the type diagram generator available. This implies that myPDDL can support knowledge engineers well in the PDDL design and analysis process.},
+	booktitle = {Knowledge {Engineering} {Tools} and {Techniques} for {AI} {Planning}},
+	publisher = {Springer International Publishing},
+	author = {Strobel, Volker and Kirsch, Alexandra},
+	editor = {Vallati, Mauro and Kitchin, Diane},
+	year = {2020},
+	doi = {10.1007/978-3-030-38561-3_4},
+	pages = {67--90},
+}
+
+@article{helmert_fast_2006,
+	title = {The {Fast} {Downward} {Planning} {System}},
+	volume = {26},
+	copyright = {Copyright (c)},
+	issn = {1076-9757},
+	url = {https://www.jair.org/index.php/jair/article/view/10457},
+	doi = {10.1613/jair.1705},
+	abstract = {Fast Downward is a classical planning system based on heuristic search. It can deal with general deterministic planning problems encoded in the propositional fragment of PDDL2.2, including advanced features like ADL conditions and effects and derived predicates (axioms). Like other well-known planners such as HSP and FF, Fast Downward is a progression planner, searching the space of world states of a planning task in the forward direction. However, unlike other PDDL planning systems, Fast Downward does not use the propositional PDDL representation of a planning task directly. Instead, the input is first translated into an alternative representation called multi-valued planning tasks, which makes many of the implicit constraints of a propositional planning task explicit. Exploiting this alternative representation, Fast Downward uses hierarchical decompositions of planning tasks for computing its heuristic function, called the causal graph heuristic, which is very different from traditional HSP-like heuristics based on ignoring negative interactions of operators.
+
+In this article, we give a full account of Fast Downward's approach to solving multi-valued planning tasks. We extend our earlier discussion of the causal graph heuristic to tasks involving axioms and conditional effects and present some novel techniques for search control that are used within Fast Downward's best-first search algorithm: preferred operators transfer the idea of helpful actions from local search to global best-first search, deferred evaluation of heuristic functions mitigates the negative effect of large branching factors on search performance, and multi-heuristic best-first search combines several heuristic evaluation functions within a single search algorithm in an orthogonal way. We also describe efficient data structures for fast state expansion (successor generators and axiom evaluators) and present a new non-heuristic search algorithm called focused iterative-broadening search, which utilizes the information encoded in causal graphs in a novel way.
+
+Fast Downward has proven remarkably successful: It won the "classical'' (i.e., propositional, non-optimising) track of the 4th International Planning Competition at ICAPS 2004, following in the footsteps of planners such as FF and LPG. Our experiments show that it also performs very well on the benchmarks of the earlier planning competitions and provide some insights about the usefulness of the new search enhancements.},
+	language = {en},
+	urldate = {2024-04-26},
+	journal = {Journal of Artificial Intelligence Research},
+	author = {Helmert, M.},
+	month = jul,
+	year = {2006},
+	pages = {191--246},
+	file = {Full Text PDF:/home/murumu1/Zotero/storage/WEK6WM76/Helmert - 2006 - The Fast Downward Planning System.pdf:application/pdf},
+}
+
+@article{segovia-aguas_generalized_2021,
+  author       = {Javier Segovia Aguas and
+                  Sergio Jim{\'{e}}nez Celorrio and
+                  Anders Jonsson},
+  title        = {Generalized Planning as Heuristic Search: {A} new planning search-space
+                  that leverages pointers over objects},
+  journal      = {CoRR},
+  volume       = {abs/2301.11087},
+  year         = {2023},
+  url          = {https://doi.org/10.48550/arXiv.2301.11087},
+  doi          = {10.48550/ARXIV.2301.11087},
+  eprinttype    = {arXiv},
+  eprint       = {2301.11087},
+  timestamp    = {Wed, 24 Jan 2024 16:27:10 +0100},
+  biburl       = {https://dblp.org/rec/journals/corr/abs-2301-11087.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@article{ghallab_pddl_1998,
+	title = {{PDDL} - {The} {Planning} {Domain} {Definition} {Language}},
+	abstract = {This manual describes the syntax of PDDL, the Planning Domain Definition Language, the problem-specification language for the AIPS-98 planning competition. The language has roughly the the expressiveness of Pednault's ADL [10] for propositions, and roughly the expressiveness of UMCP [6] for actions. Our hope is to encourage empirical evaluation of planner performance, and development of standard sets of problems all in comparable notations. 1 Introduction This manual describes the syntax, and, less formally, the semantics, of the Planning Domain Definition Language (PDDL). The language supports the following syntactic features: ffl Basic STRIPS-style actions ffl Conditional effects ffl Universal quantification over dynamic universes (i.e., object creation and destruction), ffl Domain axioms over stratified theories, ffl Specification of safety constraints. ffl Specification of hierarchical actions composed of subactions and subgoals. ffl Management of multiple problems in mul...},
+	author = {Ghallab, Malik and Knoblock, Craig and Wilkins, David and Barrett, Anthony and Christianson, Dave and Friedman, Marc and Kwok, Chung and Golden, Keith and Penberthy, Scott and Smith, David and Sun, Ying and Weld, Daniel},
+	month = aug,
+	year = {1998},
+}
+
+@article{suárezhernández2021strips,
+  author       = {Alejandro Su{\'{a}}rez{-}Hern{\'{a}}ndez and
+                  Javier Segovia Aguas and
+                  Carme Torras and
+                  Guillem Aleny{\`{a}}},
+  title        = {{STRIPS} Action Discovery},
+  journal      = {CoRR},
+  volume       = {abs/2001.11457},
+  year         = {2020},
+  url          = {https://arxiv.org/abs/2001.11457},
+  eprinttype    = {arXiv},
+  eprint       = {2001.11457},
+  timestamp    = {Mon, 03 Feb 2020 11:21:05 +0100},
+  biburl       = {https://dblp.org/rec/journals/corr/abs-2001-11457.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@misc{vie2022adversarial,
+      title={Adversarial Plannning}, 
+      author={Valentin Vie and Ryan Sheatsley and Sophia Beyda and Sushrut Shringarputale and Kevin Chan and Trent Jaeger and Patrick McDaniel},
+      year={2022},
+      eprint={2205.00566},
+      archivePrefix={arXiv},
+      primaryClass={cs.CR}
+}
+
+@article{backstrom_automaton_plans,
+author = {B\"{a}ckstr\"{o}m, Christer and Jonsson, Anders and Jonsson, Peter},
+title = {Automaton plans},
+year = {2014},
+issue_date = {September 2014},
+publisher = {AI Access Foundation},
+address = {El Segundo, CA, USA},
+volume = {51},
+number = {1},
+issn = {1076-9757},
+abstract = {Macros have long been used in planning to represent subsequences of operators. Macros can be used in place of individual operators during search, sometimes reducing the effort required to find a plan to the goal. Another use of macros is to compactly represent long plans. In this paper we introduce a novel solution concept called automaton plans in which plans are represented using hierarchies of automata. Automaton plans can be viewed as an extension of macros that enables parameterization and branching. We provide several examples that illustrate how automaton plans can be useful, both as a compact representation of exponentially long plans and as an alternative to sequential solutions in benchmark domains such as LOGISTICS and GRID. We also compare automaton plans to other compact plan representations from the literature, and find that automaton plans are strictly more expressive than macros, but strictly less expressive than HTNs and certain representations allowing efficient sequential access to the operators of the plan.},
+journal = {J. Artif. Int. Res.},
+month = {sep},
+pages = {255–291},
+numpages = {37}
+}
+
+@misc{scarlett_why_2023,
+	title = {Why {Python} keeps growing, explained},
+	url = {https://github.blog/2023-03-02-why-python-keeps-growing-explained/},
+	abstract = {A deep dive into why more people are using Python than ever, its key use cases, and why it’s still so popular 30-plus years after it was first released.},
+	language = {en-US},
+	urldate = {2024-04-26},
+	journal = {The GitHub Blog},
+	author = {Scarlett, Rizel},
+	month = mar,
+	year = {2023},
+	file = {Snapshot:/home/murumu1/Zotero/storage/2JR6T3BW/2023-03-02-why-python-keeps-growing-explained.html:text/html},
+}
+
+@misc{druzhinina_why_2023,
+	title = {Why {We} {Choose} {Python} {As} {A} {Backend} {Language} in 2023},
+	url = {https://www.audax.global/blog/why-choose-python-as-a-backend-language},
+	abstract = {Choosing the right technology for backend development In the realm of backend development, the choice of technology can make or break a project’s success. The stakes are high, and the consequences of selecting the wrong language can be dire. That’s why at Audax, we take the time to carefully decide on the right language for […]},
+	language = {en-US},
+	urldate = {2024-04-26},
+	journal = {Audax},
+	author = {Druzhinina, Romein},
+	month = jun,
+	year = {2023},
+}
+
+@misc{noauthor_why_2023,
+	title = {Why {C}++ {Is} {Fast}: {Unpacking} {Its} {Speed} {And} {Efficiency} - {Code} {With} {C}},
+	shorttitle = {Why {C}++ {Is} {Fast}},
+	url = {https://www.codewithc.com/why-c-is-fast-unpacking-its-speed-and-efficiency/},
+	abstract = {Why C++ Is Lightning-Fast: Decoding Its Speed and Efficiency! �� The Way to Programming},
+	language = {en-US},
+	urldate = {2024-04-26},
+	month = dec,
+	year = {2023},
+	note = {Section: C++ Tutorial},
+}
+
+@article{heuristicplanning,
+  author       = {Blai Bonet and
+                  Hector Geffner},
+  title        = {Planning as heuristic search},
+  journal      = {Artif. Intell.},
+  volume       = {129},
+  number       = {1-2},
+  pages        = {5--33},
+  year         = {2001},
+  url          = {https://doi.org/10.1016/S0004-3702(01)00108-4},
+  doi          = {10.1016/S0004-3702(01)00108-4},
+  timestamp    = {Mon, 26 Oct 2020 09:02:06 +0100},
+  biburl       = {https://dblp.org/rec/journals/ai/BonetG01.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+
+@Inbook{depthfirstsearch,
+author="Kozen, Dexter C.",
+title="Depth-First and Breadth-First Search",
+bookTitle="The Design and Analysis of Algorithms",
+year="1992",
+publisher="Springer New York",
+address="New York, NY",
+pages="19--24",
+abstract="Depth-first search (DFS) and breadth-first search (BFS) are two of the most useful subroutines in graph algorithms. They allow one to search a graph in linear time and compile information about the graph. They differ in that the former uses a stack (LIFO) discipline and the latter uses a queue (FIFO) discipline to choose the next edge to explore.",
+isbn="978-1-4612-4400-4",
+doi="10.1007/978-1-4612-4400-4_4",
+url="https://doi.org/10.1007/978-1-4612-4400-4_4"
+}

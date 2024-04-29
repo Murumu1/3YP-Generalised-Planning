@@ -206,9 +206,11 @@ class SnakeEnvironment(Environment):
 
     Attributes:
         board (TileCollection): A collection of tiles composing the game board.
-        start (Tile): The starting position of the snake.
+        head (Tile): The head position of the snake.
+        tail (Tile): The tail position of the snake.
         apples (TileCollection): A collection of tiles representing the positions of apples.
     """
     board: TileCollection
-    start: Tile
+    head: Tile
+    tail: Tile
     apples: TileCollection

@@ -1,0 +1,9 @@
+\begin{tikzpicture}
+	\begin{pgfonlayer}{nodelayer}
+		\node [style=Tile] (0) at (-1, 1) {\texttt{u0, d2}};
+		\node [style=Start] (1) at (-1, -3) {\texttt{start}};
+		\node [style=Tile] (2) at (-1, 5) {\texttt{u1, l5}};
+		\node [style=Tile] (3) at (3, 5) {\texttt{r3, l7}};
+		\node [style=Goal] (4) at (7, 5) {\texttt{goal}};
+	\end{pgfonlayer}
+\end{tikzpicture}

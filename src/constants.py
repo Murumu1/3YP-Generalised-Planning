@@ -5,6 +5,7 @@ GOAL_TILE = (0, 255, 0)
 START_TILE = (255, 0, 0)
 PLAYER = (0, 0, 255)
 INITIAL_APPLE = (0, 255, 0)
+TAIL_TILE = (0, 0, 255)
 
 # PDDL Attributes
 DIRECTIONS = NORTH, EAST, SOUTH, WEST = 'north', 'east', 'south', 'west'
@@ -27,3 +28,4 @@ APPLE_AT = 'apple-at'
 NEXT_APPLE = 'next-apple'
 SPAWN_APPLE = 'spawn-apple'
 DUMMYPOINT = 'dummypoint'
+IS_DUMMYPOINT = 'is-dummypoint'

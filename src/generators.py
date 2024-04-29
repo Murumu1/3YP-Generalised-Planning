@@ -209,7 +209,7 @@ class ProblemGenerator:
             print(f"Problem {i}:")
             print(problem)
 
-    def display_images(self) -> None:
+    def display_images(self, columns=None) -> None:
         """Displays images of the generated environments as iPython plots."""
 
         images = []
@@ -218,7 +218,7 @@ class ProblemGenerator:
 
         plt.figure(figsize=(20, 10))
 
-        columns = math.floor(math.sqrt(len(images)))
+        columns = math.floor(math.sqrt(len(images))) if not columns else columns
         for i, image in enumerate(images):
             plt.subplot(len(images) // columns + 1, columns, i + 1)
             plt.imshow(image)
@@ -253,7 +253,7 @@ class ProblemGenerator:
 
         return results
 
-    def solve_all(self) -> list[PlanGenerationResultStatus]:
+    def solve_all(self, program_lines=10) -> list[PlanGenerationResultStatus]:
         """Solves all problems at once using generalised planning
 
         Returns:
@@ -262,9 +262,9 @@ class ProblemGenerator:
 
         with up.environment.get_environment().factory.FewshotPlanner(name="bfgp") as planner:
             planner.set_arguments(
-                program_lines=self._program_lines,
+                program_lines=program_lines if self._program_lines == 10 else self._program_lines,
                 theory="cpp",
-                translated_problem_dir=self._plan_directory + "/"
+                # translated_problem_dir=self._plan_directory + "/"
             )
 
             results = planner.solve(self._problems, output_stream=None)
@@ -637,6 +637,11 @@ class SnakeProblemGenerator(ProblemGenerator):
         self._apple_count = options.get("apple_count", 5)
         super().__init__("snake", **options)
 
+        ratio = self._apple_count / ((self._tile_size ** 2) - 2)
+        if ratio > 1:
+            raise ValueError(f"Too many apples! apples must be less than: {((self._tile_size ** 2) - 2)} for the "
+                             f"selected tile size: {self._tile_size}")
+
     def _generate_environment_auto(self) -> Environment:
         """
         Generates snake environment automatically.
@@ -652,6 +657,9 @@ class SnakeProblemGenerator(ProblemGenerator):
 
         # Selects a random start position and random positions for apples.
         start = available_locations.pop(random.randint(0, len(available_locations) - 1))
+        tail = available_locations.find_neighbours(start)[0]
+        available_locations.remove(tail)
+
         goals = random.sample(available_locations, self._apple_count)
         apples = TileCollection(goals)
 
@@ -669,12 +677,13 @@ class SnakeProblemGenerator(ProblemGenerator):
             current_colour = self._darken_colour(current_colour)
 
         pygame.draw.rect(screen, START_TILE, start.get_rect())
+        pygame.draw.rect(screen, TAIL_TILE, tail.get_rect())
         pygame.display.flip()
 
         self._save_pygame_environment(screen)
         pygame.quit()
 
-        return SnakeEnvironment(board, start, apples)
+        return SnakeEnvironment(board, start, tail, apples)
 
     def _generate_environment_manual(self) -> Environment:
         """
@@ -702,10 +711,10 @@ class SnakeProblemGenerator(ProblemGenerator):
                 self._problem.set_initial_value(self._problem.fluent(PATH)(neighbour_object, current_object), True)
                 self._problem.set_initial_value(self._problem.fluent(PATH)(current_object, neighbour_object), True)
 
-        start_object = self._get_mapping(environment.start)
+        start_object = self._get_mapping(environment.head)
 
         # Tail is set to a random neighbour of the head.
-        tail_tile = environment.board.find_neighbours(environment.start)[0]
+        tail_tile = environment.tail
         tail_object = self._get_mapping(tail_tile)
 
         # Body.
@@ -725,6 +734,8 @@ class SnakeProblemGenerator(ProblemGenerator):
 
         # Final spawn once goal apple has been spawned.
         dummy_apple = Object(DUMMYPOINT, self._problem.user_type(POSITION))
+        self._problem.add_object(dummy_apple)
+        self._problem.set_initial_value(self._problem.fluent(IS_DUMMYPOINT)(dummy_apple), True)
 
         # next-apple(?appleloc ?nextappleloc) for all apples := true
         for i in range(1, len(environment.apples)):
@@ -739,8 +750,7 @@ class SnakeProblemGenerator(ProblemGenerator):
         for i in range(len(environment.apples)):
             self._problem.add_goal(Not(self._problem.fluent(APPLE_AT)(self._get_mapping(environment.apples[i]))))
 
-    @staticmethod
-    def _darken_colour(colour):
+    def _darken_colour(self, colour):
         """
         Darkens a given RGB color tuple.
 
@@ -751,4 +761,5 @@ class SnakeProblemGenerator(ProblemGenerator):
             tuple: Darkened RGB color tuple.
         """
 
-        return round(colour[0] * 0.95), round(colour[1] * 0.95), round(colour[2] * 0.95)
+        ratio = 1 - (1 / self._apple_count)
+        return round(colour[0] * ratio), round(colour[1] * ratio), round(colour[2] * ratio)

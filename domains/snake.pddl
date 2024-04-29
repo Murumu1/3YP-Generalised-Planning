@@ -12,7 +12,6 @@
 )
 
 (:types position)
-(:constants dummypoint - position)
 
 (:predicates
     (path ?x ?y - position)
@@ -23,6 +22,7 @@
     (apple-at ?x - position)
     (spawn-apple ?x - position)
     (next-apple ?x ?y - position)
+    (is-dummypoint ?dummypoint - position)
 )
 
 
@@ -57,7 +57,7 @@
         (apple-at ?newhead)
         (spawn-apple ?spawn)
         (next-apple ?spawn ?nextspawn)
-        (not (= ?spawn dummypoint))
+        (not (is-dummypoint ?spawn))
     )
     :effect (and
         (blocked ?newhead)
@@ -72,14 +72,15 @@
 )
 
 (:action move-and-eat-no-spawn
-    :parameters (?head ?newhead - position)
+    :parameters (?head ?newhead ?dummypoint - position)
     :precondition
     (and
         (head-at ?head)
         (path ?head ?newhead)
         (not (blocked ?newhead))
         (apple-at ?newhead)
-        (spawn-apple dummypoint)
+        (is-dummypoint ?dummypoint)
+        (spawn-apple ?dummypoint)
     )
     :effect
     (and

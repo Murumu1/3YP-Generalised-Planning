@@ -1,0 +1,13 @@
+\begin{tikzpicture}
+	\begin{pgfonlayer}{nodelayer}
+		\node [style=Tile] (2) at (5, 4) {};
+		\node [style=Tile] (3) at (5, 0) {};
+		\node [style=Tile] (5) at (-3, 0) {};
+		\node [style=Tile] (6) at (-3, -4) {};
+		\node [style=Tile] (8) at (5, -4) {};
+		\node [style=Old Tail] (9) at (1, -4) {$tail$};
+		\node [style=Tail] (10) at (1, 0) {$tail_{new}$};
+		\node [style=Old Head] (11) at (1, 4) {$head$};
+		\node [style=Start] (12) at (-3, 4) {$head_{new}$};
+	\end{pgfonlayer}
+\end{tikzpicture}
